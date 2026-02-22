@@ -14,6 +14,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
   catch(exception: any, host: ArgumentsHost): void {
+    // Skip non-HTTP contexts (e.g., Telegraf bot updates)
+    if (host.getType() !== 'http') {
+      this.logger.error(
+        `[${host.getType()}] Unhandled exception: ${exception.message}`,
+        exception.stack,
+      );
+      return;
+    }
+
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();

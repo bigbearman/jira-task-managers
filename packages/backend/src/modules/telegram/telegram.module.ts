@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TelegrafModule } from 'nestjs-telegraf';
 import { DatabaseModule } from '@/database';
 import { QueueModule } from '@/queue/queue.module';
 
 import { AuthChatIdGuard } from './guards/auth-chat-id.guard';
+import { LoggingMiddleware } from './middleware/logging.middleware';
 import { StartCommand } from './commands/start.command';
 import { ProjectsCommand } from './commands/projects.command';
 import { SprintCommand } from './commands/sprint.command';
@@ -17,21 +18,30 @@ import { CallbackQueryHandler } from './handlers/callback-query.handler';
   imports: [
     TelegrafModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        token: config.get('telegram.botToken', ''),
-        launchOptions: config.get('telegram.pollingEnabled', true)
-          ? {
-              dropPendingUpdates: true,
-              allowedUpdates: ['message', 'callback_query', 'my_chat_member', 'chat_member'],
-            }
-          : false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const logger = new Logger('TelegramModule');
+        const token = config.get('telegram.botToken', '');
+        const pollingEnabled = config.get('telegram.pollingEnabled', true);
+        logger.log(`Bot token: ${token ? token.slice(0, 10) + '...' : 'MISSING'}`);
+        logger.log(`Polling enabled: ${pollingEnabled}`);
+
+        return {
+          token,
+          launchOptions: pollingEnabled
+            ? {
+                dropPendingUpdates: true,
+                allowedUpdates: ['message', 'callback_query', 'my_chat_member', 'chat_member'],
+              }
+            : false,
+        };
+      },
     }),
     DatabaseModule,
     QueueModule,
   ],
   providers: [
     AuthChatIdGuard,
+    LoggingMiddleware,
     StartCommand,
     ProjectsCommand,
     SprintCommand,

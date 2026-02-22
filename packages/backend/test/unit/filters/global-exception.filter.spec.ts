@@ -15,11 +15,24 @@ describe('GlobalExceptionFilter', () => {
     };
     mockRequest = { url: '/api/v1/test', method: 'GET' };
     mockHost = {
+      getType: () => 'http',
       switchToHttp: () => ({
         getResponse: () => mockResponse,
         getRequest: () => mockRequest,
       }),
     } as any;
+  });
+
+  it('should skip non-HTTP contexts (e.g., Telegraf)', () => {
+    const nonHttpHost = {
+      getType: () => 'telegraf',
+    } as any;
+    const exception = new Error('Bot error');
+
+    filter.catch(exception, nonHttpHost);
+
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it('should handle HttpException with correct status code', () => {
