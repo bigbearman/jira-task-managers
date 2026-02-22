@@ -20,7 +20,10 @@ import { CallbackQueryHandler } from './handlers/callback-query.handler';
       useFactory: (config: ConfigService) => ({
         token: config.get('telegram.botToken', ''),
         launchOptions: config.get('telegram.pollingEnabled', true)
-          ? { dropPendingUpdates: true }
+          ? {
+              dropPendingUpdates: true,
+              allowedUpdates: ['message', 'callback_query', 'my_chat_member', 'chat_member'],
+            }
           : false,
       }),
     }),
