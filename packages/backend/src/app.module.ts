@@ -1,5 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { redisStore } from 'cache-manager-ioredis-yet';
 import {
   configDb,
   configRedis,
@@ -9,6 +13,7 @@ import {
   configGit,
 } from '@/shared/config';
 import { DatabaseModule } from '@/database';
+import { NotificationModule } from '@/notification/notification.module';
 import { ApiModule } from '@/api/api.module';
 import { WorkerModule } from '@/worker/worker.module';
 import { TelegramModule } from '@/telegram/telegram.module';
@@ -32,8 +37,25 @@ if (isBot) conditionalModules.push(TelegramModule);
       expandVariables: true,
       load: [configDb, configRedis, configJira, configTelegram, configClaude, configGit],
     }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        store: await redisStore({
+          host: config.get<string>('redis.host'),
+          port: config.get<number>('redis.port'),
+          password: config.get<string>('redis.password') || undefined,
+          db: (config.get<number>('redis.database') ?? 0) + 1,
+          ttl: 60,
+        }),
+      }),
+    }),
     DatabaseModule,
+    NotificationModule,
     ...conditionalModules,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

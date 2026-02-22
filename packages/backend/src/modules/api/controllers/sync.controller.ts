@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { IsString, IsOptional } from 'class-validator';
 import { JiraInstanceRepository, SyncLogRepository } from '@/database';
 import { QueueService } from '@/queue/queue.service';
@@ -24,6 +25,7 @@ export class SyncController {
   ) {}
 
   @Post()
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Trigger full sync for all instances or specific instance' })
   async triggerSync(@Body() dto: TriggerSyncDto) {
     if (dto.instanceSlug) {
@@ -41,6 +43,7 @@ export class SyncController {
   }
 
   @Post('projects')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Sync projects only' })
   async syncProjects(@Body() dto: TriggerSyncDto) {
     if (dto.instanceSlug) {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@/database';
 import { JiraModule } from '@/jira/jira.module';
 import { QueueModule } from '@/queue/queue.module';
+import { NotificationModule } from '@/notification/notification.module';
 
 // Controllers
 import { HealthController } from './controllers/health.controller';
@@ -13,6 +14,7 @@ import { VersionController } from './controllers/version.controller';
 import { TicketController } from './controllers/ticket.controller';
 import { TaskActionController } from './controllers/task-action.controller';
 import { DashboardController } from './controllers/dashboard.controller';
+import { NotificationController } from './controllers/notification.controller';
 
 // Services
 import { ProjectService } from './services/project.service';
@@ -23,7 +25,7 @@ import { TaskActionService } from './services/task-action.service';
 import { DashboardService } from './services/dashboard.service';
 
 @Module({
-  imports: [DatabaseModule, JiraModule, QueueModule],
+  imports: [DatabaseModule, JiraModule, QueueModule, NotificationModule],
   controllers: [
     HealthController,
     InstanceController,
@@ -34,6 +36,7 @@ import { DashboardService } from './services/dashboard.service';
     TicketController,
     TaskActionController,
     DashboardController,
+    NotificationController,
   ],
   providers: [
     ProjectService,

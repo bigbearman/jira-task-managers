@@ -7,6 +7,7 @@ import { JiraModule } from '@/jira/jira.module';
 import { QueueModule } from '@/queue/queue.module';
 import { ClaudeModule } from '@/claude/claude.module';
 import { GitModule } from '@/git/git.module';
+import { NotificationModule } from '@/notification/notification.module';
 import { SyncConsumer } from './consumers/sync.consumer';
 import { AiAnalysisConsumer } from './consumers/ai-analysis.consumer';
 import { GitOperationConsumer } from './consumers/git-operation.consumer';
@@ -20,6 +21,7 @@ import { SyncScheduler } from './schedulers/sync.scheduler';
     QueueModule,
     ClaudeModule,
     GitModule,
+    NotificationModule,
     BullModule.registerQueue(
       { name: QUEUE_NAME.JIRA_SYNC },
       { name: QUEUE_NAME.AI_ANALYSIS },

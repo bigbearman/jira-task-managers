@@ -1,5 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Job } from 'bullmq';
 import { QUEUE_NAME, QUEUE_PROCESSOR } from '@/shared/constants/queue';
 import { JiraService } from '@/jira/jira.service';
@@ -31,6 +33,7 @@ export class SyncConsumer extends WorkerHost {
     private readonly versionRepo: VersionRepository,
     private readonly syncLogRepo: SyncLogRepository,
     private readonly queueService: QueueService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
     super();
   }
@@ -101,6 +104,10 @@ export class SyncConsumer extends WorkerHost {
 
       await this.syncLogRepo.markCompleted(syncLog.id, { processed: 1, created: 0, updated: 0, failed: 0 });
       await this.instanceRepo.update(instanceId, { lastSyncedAt: new Date() });
+
+      // Invalidate all cached data after sync
+      await this.cacheManager.clear();
+      this.logger.log(`[SYNC_ALL] Cache invalidated after successful sync`);
     } catch (error: any) {
       await this.syncLogRepo.markFailed(syncLog.id, error.message);
       throw error;

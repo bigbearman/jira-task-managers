@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { VersionService } from '../services/version.service';
 import { PaginationDto } from '../dtos';
+import { CACHE_TTL } from '@/shared/constants/cache';
 
 @ApiTags('Versions')
 @Controller()
@@ -9,6 +11,8 @@ export class VersionController {
   constructor(private readonly versionService: VersionService) {}
 
   @Get('projects/:key/versions')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'List versions for a project' })
   async listByProject(@Param('key') key: string) {
     const versions = await this.versionService.findByProject(key);
@@ -16,6 +20,8 @@ export class VersionController {
   }
 
   @Get('versions/unreleased')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'Get unreleased versions (optionally filtered by project)' })
   async getUnreleased(@Query('projectKey') projectKey?: string) {
     const versions = await this.versionService.findUnreleased(projectKey);
@@ -23,6 +29,8 @@ export class VersionController {
   }
 
   @Get('versions/:id')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(CACHE_TTL.DETAIL * 1000)
   @ApiOperation({ summary: 'Get version by ID' })
   async getById(@Param('id') id: string) {
     const version = await this.versionService.findById(id);

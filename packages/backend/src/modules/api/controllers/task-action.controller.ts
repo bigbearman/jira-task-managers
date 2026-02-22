@@ -1,5 +1,6 @@
 import { Controller, Post, Put, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { TaskActionService } from '../services/task-action.service';
 import { AnalyzeTicketDto, ApproveTicketDto, EditApproachDto } from '../dtos';
 
@@ -9,6 +10,7 @@ export class TaskActionController {
   constructor(private readonly taskActionService: TaskActionService) {}
 
   @Post(':key/analyze')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Trigger AI analysis (Claude summary + solution)' })
   async analyze(@Param('key') key: string, @Body() dto: AnalyzeTicketDto) {
     const action = await this.taskActionService.analyze(key, dto);
@@ -16,6 +18,7 @@ export class TaskActionController {
   }
 
   @Post(':key/approve')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Approve ticket → trigger code flow (branch → code → test → PR)' })
   async approve(@Param('key') key: string, @Body() dto: ApproveTicketDto) {
     const action = await this.taskActionService.approve(key, dto);
