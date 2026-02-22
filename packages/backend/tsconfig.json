@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@/database": ["modules/database/index"],
+      "@/database/*": ["modules/database/*"],
+      "@/api/*": ["modules/api/*"],
+      "@/worker/*": ["modules/worker/*"],
+      "@/queue/*": ["modules/queue/*"],
+      "@/jira/*": ["modules/jira/*"],
+      "@/claude/*": ["modules/claude/*"],
+      "@/git/*": ["modules/git/*"],
+      "@/telegram/*": ["modules/telegram/*"],
+      "@/notification/*": ["modules/notification/*"],
+      "@/shared/*": ["shared/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
+}

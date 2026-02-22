@@ -1,0 +1,21 @@
+{
+  "name": "multi-jira-task-managers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-Jira AI-powered task management system with NestJS + Next.js",
+  "scripts": {
+    "dev:api": "pnpm --filter @mjt/backend dev",
+    "dev:web": "pnpm --filter @mjt/web dev",
+    "build": "pnpm -r build",
+    "build:backend": "pnpm --filter @mjt/backend build",
+    "build:web": "pnpm --filter @mjt/web build",
+    "test": "pnpm --filter @mjt/backend test",
+    "test:e2e": "pnpm --filter @mjt/backend test:e2e",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
