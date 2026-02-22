@@ -15,22 +15,22 @@ export class Attachment extends BaseEntity {
   @Column()
   filename: string;
 
-  @Column({ name: 'file_size', nullable: true })
+  @Column({ name: 'file_size', type: 'integer', nullable: true })
   fileSize: number | null;
 
-  @Column({ name: 'mime_type', nullable: true })
+  @Column({ name: 'mime_type', type: 'varchar', nullable: true })
   mimeType: string | null;
 
-  @Column({ name: 'content_url', nullable: true })
+  @Column({ name: 'content_url', type: 'varchar', nullable: true })
   contentUrl: string | null;
 
-  @Column({ name: 'thumbnail_url', nullable: true })
+  @Column({ name: 'thumbnail_url', type: 'varchar', nullable: true })
   thumbnailUrl: string | null;
 
-  @Column({ name: 'author_account_id', nullable: true })
+  @Column({ name: 'author_account_id', type: 'varchar', nullable: true })
   authorAccountId: string | null;
 
-  @Column({ name: 'author_display_name', nullable: true })
+  @Column({ name: 'author_display_name', type: 'varchar', nullable: true })
   authorDisplayName: string | null;
 
   @Column({ name: 'jira_created_at', type: 'timestamptz', nullable: true })

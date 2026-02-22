@@ -40,16 +40,16 @@ export class GitOperation extends BaseEntity {
   @Column({ name: 'operation_type', type: 'enum', enum: GitOperationType })
   operationType: GitOperationType;
 
-  @Column({ name: 'branch_name', nullable: true })
+  @Column({ name: 'branch_name', type: 'varchar', nullable: true })
   branchName: string | null;
 
-  @Column({ name: 'pr_number', nullable: true })
+  @Column({ name: 'pr_number', type: 'integer', nullable: true })
   prNumber: number | null;
 
-  @Column({ name: 'pr_url', nullable: true })
+  @Column({ name: 'pr_url', type: 'varchar', nullable: true })
   prUrl: string | null;
 
-  @Column({ name: 'commit_sha', nullable: true })
+  @Column({ name: 'commit_sha', type: 'varchar', nullable: true })
   commitSha: string | null;
 
   @Column({ name: 'ci_status', type: 'enum', enum: CiStatus, nullable: true })

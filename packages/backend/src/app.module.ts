@@ -11,6 +11,7 @@ import {
 import { DatabaseModule } from '@/database';
 import { ApiModule } from '@/api/api.module';
 import { WorkerModule } from '@/worker/worker.module';
+import { TelegramModule } from '@/telegram/telegram.module';
 
 const isApi = process.env.IS_API === '1' || process.env.IS_API === 'true';
 const isWorker = process.env.IS_WORKER === '1' || process.env.IS_WORKER === 'true';
@@ -22,7 +23,7 @@ const loadApi = isApi || (!isApi && !isWorker && !isBot);
 const conditionalModules: any[] = [];
 if (loadApi) conditionalModules.push(ApiModule);
 if (isWorker) conditionalModules.push(WorkerModule);
-// if (isBot) conditionalModules.push(TelegramModule); // Phase 5
+if (isBot) conditionalModules.push(TelegramModule);
 
 @Module({
   imports: [

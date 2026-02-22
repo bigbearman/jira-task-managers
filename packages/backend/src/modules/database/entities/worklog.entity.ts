@@ -12,13 +12,13 @@ export class Worklog extends BaseEntity {
   @Column({ name: 'ticket_id' })
   ticketId: string;
 
-  @Column({ name: 'author_account_id', nullable: true })
+  @Column({ name: 'author_account_id', type: 'varchar', nullable: true })
   authorAccountId: string | null;
 
-  @Column({ name: 'author_display_name', nullable: true })
+  @Column({ name: 'author_display_name', type: 'varchar', nullable: true })
   authorDisplayName: string | null;
 
-  @Column({ name: 'time_spent', nullable: true })
+  @Column({ name: 'time_spent', type: 'varchar', nullable: true })
   timeSpent: string | null;
 
   @Column({ name: 'time_spent_seconds', default: 0 })

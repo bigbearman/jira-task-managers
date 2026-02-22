@@ -23,7 +23,7 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'ticket_id' })
   ticketId: string;
 
-  @Column({ name: 'task_action_id', nullable: true })
+  @Column({ name: 'task_action_id', type: 'uuid', nullable: true })
   taskActionId: string | null;
 
   @Column({ name: 'analysis_type', type: 'enum', enum: AnalysisType })
@@ -35,16 +35,16 @@ export class AiAnalysis extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   response: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   model: string | null;
 
-  @Column({ name: 'tokens_used', nullable: true })
+  @Column({ name: 'tokens_used', type: 'integer', nullable: true })
   tokensUsed: number | null;
 
   @Column({ name: 'cost_usd', type: 'decimal', precision: 10, scale: 6, nullable: true })
   costUsd: number | null;
 
-  @Column({ name: 'duration_ms', nullable: true })
+  @Column({ name: 'duration_ms', type: 'integer', nullable: true })
   durationMs: number | null;
 
   @Column({ type: 'enum', enum: AnalysisStatus, default: AnalysisStatus.PENDING })

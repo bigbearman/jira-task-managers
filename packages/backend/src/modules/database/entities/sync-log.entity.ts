@@ -16,17 +16,17 @@ export class SyncLog extends BaseEntity {
   @Column({ name: 'sync_type' })
   syncType: string;
 
-  @Column({ name: 'entity_type', nullable: true })
+  @Column({ name: 'entity_type', type: 'varchar', nullable: true })
   entityType: string | null;
 
-  @Column({ name: 'entity_id', nullable: true })
+  @Column({ name: 'entity_id', type: 'varchar', nullable: true })
   entityId: string | null;
 
   @Index()
-  @Column({ name: 'jira_project_id', nullable: true })
+  @Column({ name: 'jira_project_id', type: 'varchar', nullable: true })
   jiraProjectId: string | null;
 
-  @Column({ name: 'instance_id', nullable: true })
+  @Column({ name: 'instance_id', type: 'varchar', nullable: true })
   instanceId: string | null;
 
   @Column({ type: 'enum', enum: SyncStatus, default: SyncStatus.PENDING })
@@ -53,7 +53,7 @@ export class SyncLog extends BaseEntity {
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage: string | null;
 
-  @Column({ name: 'triggered_by', nullable: true })
+  @Column({ name: 'triggered_by', type: 'varchar', nullable: true })
   triggeredBy: string | null;
 
   @ManyToOne(() => Project, (project) => project.syncLogs, { nullable: true })

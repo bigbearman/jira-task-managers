@@ -39,7 +39,7 @@ export class Sprint extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   goal: string | null;
 
-  @Column({ name: 'board_id', nullable: true })
+  @Column({ name: 'board_id', type: 'integer', nullable: true })
   boardId: number | null;
 
   @ManyToOne(() => Project, (project) => project.sprints)

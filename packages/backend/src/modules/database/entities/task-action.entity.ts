@@ -37,7 +37,7 @@ export class TaskAction extends BaseEntity {
   @Column({ name: 'output_result', type: 'jsonb', nullable: true })
   outputResult: Record<string, any> | null;
 
-  @Column({ name: 'triggered_by', nullable: true })
+  @Column({ name: 'triggered_by', type: 'varchar', nullable: true })
   triggeredBy: string | null;
 
   @Column({ name: 'error_message', type: 'text', nullable: true })

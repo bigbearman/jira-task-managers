@@ -33,10 +33,10 @@ export class Notification {
   @Column({ type: 'enum', enum: NotificationType, default: NotificationType.INFO })
   type: NotificationType;
 
-  @Column({ name: 'reference_type', nullable: true })
+  @Column({ name: 'reference_type', type: 'varchar', nullable: true })
   referenceType: string | null;
 
-  @Column({ name: 'reference_id', nullable: true })
+  @Column({ name: 'reference_id', type: 'varchar', nullable: true })
   referenceId: string | null;
 
   @Column({ name: 'is_read', default: false })

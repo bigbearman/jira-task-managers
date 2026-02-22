@@ -38,49 +38,49 @@ export class Ticket extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'issue_type', nullable: true })
+  @Column({ name: 'issue_type', type: 'varchar', nullable: true })
   issueType: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   status: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   priority: string | null;
 
-  @Column({ name: 'assignee_account_id', nullable: true })
+  @Column({ name: 'assignee_account_id', type: 'varchar', nullable: true })
   assigneeAccountId: string | null;
 
-  @Column({ name: 'assignee_display_name', nullable: true })
+  @Column({ name: 'assignee_display_name', type: 'varchar', nullable: true })
   assigneeDisplayName: string | null;
 
-  @Column({ name: 'reporter_account_id', nullable: true })
+  @Column({ name: 'reporter_account_id', type: 'varchar', nullable: true })
   reporterAccountId: string | null;
 
-  @Column({ name: 'reporter_display_name', nullable: true })
+  @Column({ name: 'reporter_display_name', type: 'varchar', nullable: true })
   reporterDisplayName: string | null;
 
-  @Column({ name: 'creator_account_id', nullable: true })
+  @Column({ name: 'creator_account_id', type: 'varchar', nullable: true })
   creatorAccountId: string | null;
 
-  @Column({ name: 'creator_display_name', nullable: true })
+  @Column({ name: 'creator_display_name', type: 'varchar', nullable: true })
   creatorDisplayName: string | null;
 
   @Column({ name: 'story_points', type: 'decimal', precision: 5, scale: 2, nullable: true })
   storyPoints: number | null;
 
-  @Column({ name: 'original_estimate_seconds', nullable: true })
+  @Column({ name: 'original_estimate_seconds', type: 'integer', nullable: true })
   originalEstimateSeconds: number | null;
 
-  @Column({ name: 'time_spent_seconds', nullable: true })
+  @Column({ name: 'time_spent_seconds', type: 'integer', nullable: true })
   timeSpentSeconds: number | null;
 
-  @Column({ name: 'remaining_estimate_seconds', nullable: true })
+  @Column({ name: 'remaining_estimate_seconds', type: 'integer', nullable: true })
   remainingEstimateSeconds: number | null;
 
   @Column({ name: 'due_date', type: 'date', nullable: true })
   dueDate: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   resolution: string | null;
 
   @Column({ name: 'resolution_date', type: 'timestamptz', nullable: true })
@@ -92,10 +92,10 @@ export class Ticket extends BaseEntity {
   @Column({ type: 'simple-array', nullable: true })
   components: string[] | null;
 
-  @Column({ name: 'parent_key', nullable: true })
+  @Column({ name: 'parent_key', type: 'varchar', nullable: true })
   parentKey: string | null;
 
-  @Column({ name: 'epic_key', nullable: true })
+  @Column({ name: 'epic_key', type: 'varchar', nullable: true })
   epicKey: string | null;
 
   @Column({ type: 'jsonb', nullable: true })

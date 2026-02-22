@@ -1,0 +1,46 @@
+FROM node:22-alpine AS builder
+
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+WORKDIR /app
+
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY packages/web/package.json ./packages/web/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+
+# Copy web source
+COPY packages/web/ ./packages/web/
+
+# Build Next.js (standalone output)
+WORKDIR /app/packages/web
+RUN pnpm build
+
+# ============================================
+# Production image
+# ============================================
+FROM node:22-alpine AS runner
+
+RUN apk add --no-cache dumb-init
+RUN addgroup -g 1001 nextjs && adduser -u 1001 -G nextjs -s /bin/sh -D nextjs
+
+WORKDIR /app
+
+# Copy standalone build
+COPY --from=builder --chown=nextjs:nextjs /app/packages/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nextjs /app/packages/web/.next/static ./packages/web/.next/static
+COPY --from=builder --chown=nextjs:nextjs /app/packages/web/public ./packages/web/public
+
+ENV NODE_ENV=production
+ENV TZ=Asia/Ho_Chi_Minh
+ENV PORT=3001
+ENV HOSTNAME=0.0.0.0
+
+USER nextjs
+
+EXPOSE 3001
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "packages/web/server.js"]

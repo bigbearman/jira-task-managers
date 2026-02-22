@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-api dev-worker build test lint docker-up docker-down docker-build docker-logs migrate sync-all status
+.PHONY: help install dev dev-api dev-worker dev-web build test lint docker-up docker-down docker-build docker-logs migrate sync-all status setup
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -10,7 +10,7 @@ help: ## Show this help
 install: ## Install all dependencies
 	pnpm install
 
-dev: ## Run API + Worker in dev mode (both in one process)
+dev: ## Run API + Worker in dev mode
 	cd packages/backend && IS_API=1 IS_WORKER=1 pnpm dev
 
 dev-api: ## Run API only in dev mode
@@ -19,8 +19,17 @@ dev-api: ## Run API only in dev mode
 dev-worker: ## Run Worker only in dev mode
 	cd packages/backend && IS_API=0 IS_WORKER=1 pnpm dev
 
+dev-web: ## Run Web UI in dev mode
+	cd packages/web && pnpm dev
+
 build: ## Build all packages
-	pnpm build
+	pnpm --filter @mjt/backend build && pnpm --filter @mjt/web build
+
+build-backend: ## Build backend only
+	cd packages/backend && pnpm build
+
+build-web: ## Build web only
+	cd packages/web && pnpm build
 
 test: ## Run tests
 	cd packages/backend && pnpm test
@@ -69,7 +78,10 @@ docker-logs-api: ## View API logs
 docker-logs-worker: ## View Worker logs
 	docker compose logs -f worker
 
-docker-restart: ## Rebuild and restart
+docker-logs-web: ## View Web UI logs
+	docker compose logs -f web
+
+docker-restart: ## Rebuild and restart all
 	docker compose down && docker compose build && docker compose up -d
 
 docker-shell-api: ## Shell into API container
@@ -95,7 +107,13 @@ status: ## Get recent sync logs
 # Setup
 # ============================================
 
-setup: install docker-up ## Full setup: install deps + start Docker
+setup: install docker-build docker-up ## Full setup: install deps + build + start Docker
 	@echo "Waiting for services to be ready..."
-	@sleep 5
-	@echo "Setup complete! API: http://localhost:3000, Docs: http://localhost:3000/docs"
+	@sleep 8
+	@docker compose ps
+	@echo ""
+	@echo "Setup complete!"
+	@echo "  API:  http://localhost:$${API_PORT:-3000}"
+	@echo "  Web:  http://localhost:$${WEB_PORT:-3001}"
+	@echo "  All:  http://localhost:$${NGINX_PORT:-8080}"
+	@echo "  Docs: http://localhost:$${API_PORT:-3000}/docs"

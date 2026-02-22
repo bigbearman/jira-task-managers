@@ -26,16 +26,16 @@ export class Project extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'project_type', nullable: true })
+  @Column({ name: 'project_type', type: 'varchar', nullable: true })
   projectType: string | null;
 
-  @Column({ name: 'lead_account_id', nullable: true })
+  @Column({ name: 'lead_account_id', type: 'varchar', nullable: true })
   leadAccountId: string | null;
 
-  @Column({ name: 'lead_display_name', nullable: true })
+  @Column({ name: 'lead_display_name', type: 'varchar', nullable: true })
   leadDisplayName: string | null;
 
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ name: 'avatar_url', type: 'varchar', nullable: true })
   avatarUrl: string | null;
 
   @Column({ name: 'is_active', default: true })
