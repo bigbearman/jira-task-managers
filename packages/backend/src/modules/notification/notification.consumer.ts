@@ -10,6 +10,7 @@ import { NotificationRepository } from '@/database';
 export class NotificationConsumer extends WorkerHost {
   private readonly logger = new Logger(NotificationConsumer.name);
   private bot: Telegraf | null = null;
+  private readonly defaultTopicId: number | undefined;
 
   constructor(
     private readonly notificationRepo: NotificationRepository,
@@ -17,6 +18,7 @@ export class NotificationConsumer extends WorkerHost {
   ) {
     super();
     const botToken = this.configService.get<string>('telegram.botToken');
+    this.defaultTopicId = this.configService.get<number>('telegram.defaultTopicId');
     if (botToken) {
       this.bot = new Telegraf(botToken);
       this.logger.log('Telegram bot initialized for notifications');
@@ -37,7 +39,7 @@ export class NotificationConsumer extends WorkerHost {
   }
 
   private async sendTelegram(job: Job) {
-    const { chatId, message, notificationId } = job.data;
+    const { chatId, message, notificationId, topicId } = job.data;
 
     if (!this.bot) {
       this.logger.warn('Telegram bot not configured, skipping notification');
@@ -45,8 +47,14 @@ export class NotificationConsumer extends WorkerHost {
     }
 
     try {
-      await this.bot.telegram.sendMessage(chatId, message, { parse_mode: 'HTML' });
-      this.logger.log(`Telegram notification sent to ${chatId}`);
+      const messageThreadId = topicId ?? this.defaultTopicId;
+      const options: Record<string, any> = { parse_mode: 'HTML' };
+      if (messageThreadId) {
+        options.message_thread_id = messageThreadId;
+      }
+
+      await this.bot.telegram.sendMessage(chatId, message, options);
+      this.logger.log(`Telegram notification sent to ${chatId}${messageThreadId ? ` (topic ${messageThreadId})` : ''}`);
 
       if (notificationId) {
         await this.notificationRepo.update(notificationId, { sentAt: new Date() });

@@ -21,7 +21,7 @@ describe('NotificationService', () => {
       expect(result.channel).toBe('telegram');
       expect(notificationRepo.create).toHaveBeenCalled();
       expect(queueService.addTelegramNotification).toHaveBeenCalledWith(
-        '12345', 'Hello', undefined, undefined,
+        '12345', 'Hello', undefined, undefined, undefined,
       );
     });
   });

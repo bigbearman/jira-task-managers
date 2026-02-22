@@ -19,6 +19,7 @@ export class NotificationService {
     type: NotificationType = NotificationType.INFO,
     referenceType?: string,
     referenceId?: string,
+    topicId?: number,
   ) {
     const notification = this.notificationRepo.create({
       channel: NotificationChannel.TELEGRAM,
@@ -31,7 +32,7 @@ export class NotificationService {
     });
     const saved = await this.notificationRepo.save(notification);
 
-    await this.queueService.addTelegramNotification(chatId, message, referenceType, referenceId);
+    await this.queueService.addTelegramNotification(chatId, message, referenceType, referenceId, topicId);
     this.logger.log(`Queued Telegram notification to ${chatId}: ${title}`);
 
     return saved;

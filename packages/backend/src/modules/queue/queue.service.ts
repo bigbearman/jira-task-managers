@@ -118,10 +118,10 @@ export class QueueService {
   // Notification Jobs
   // ============================================
 
-  async addTelegramNotification(chatId: string, message: string, referenceType?: string, referenceId?: string) {
+  async addTelegramNotification(chatId: string, message: string, referenceType?: string, referenceId?: string, topicId?: number) {
     return this.notificationQueue.add(
       QUEUE_PROCESSOR.NOTIFICATION.SEND_TELEGRAM,
-      { chatId, message, referenceType, referenceId },
+      { chatId, message, referenceType, referenceId, topicId },
       { removeOnComplete: 50, removeOnFail: 100 },
     );
   }

@@ -58,6 +58,10 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       API_KEY: ${API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      TELEGRAM_ALLOWED_TOPIC_IDS: ${TELEGRAM_ALLOWED_TOPIC_IDS:-}
+      TELEGRAM_POLLING_ENABLED: "false"
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
@@ -90,6 +94,9 @@ services:
       CLAUDE_CLI_PATH: ${CLAUDE_CLI_PATH:-claude}
       CLAUDE_DEFAULT_MODEL: ${CLAUDE_DEFAULT_MODEL:-sonnet}
       GIT_DEFAULT_BASE_BRANCH: ${GIT_DEFAULT_BASE_BRANCH:-develop}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      TELEGRAM_ALLOWED_TOPIC_IDS: ${TELEGRAM_ALLOWED_TOPIC_IDS:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,33 +105,36 @@ services:
     networks:
       - mjt-network
 
-  # bot:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile
-  #   container_name: mjt-bot
-  #   restart: unless-stopped
-  #   environment:
-  #     IS_API: "0"
-  #     IS_WORKER: "0"
-  #     IS_BOT: "1"
-  #     NODE_ENV: production
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_USERNAME: ${DB_USERNAME:-postgres}
-  #     DB_PASSWORD: ${DB_PASSWORD:-postgres}
-  #     DB_DATABASE: ${DB_DATABASE:-multi_jira}
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-  #     TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   networks:
-  #     - mjt-network
+  bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mjt-bot
+    restart: unless-stopped
+    environment:
+      IS_API: "0"
+      IS_WORKER: "0"
+      IS_BOT: "1"
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_DATABASE: ${DB_DATABASE:-multi_jira}
+      DB_SYNC: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      TELEGRAM_ALLOWED_TOPIC_IDS: ${TELEGRAM_ALLOWED_TOPIC_IDS:-}
+      TELEGRAM_POLLING_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mjt-network
 
   web:
     build:
