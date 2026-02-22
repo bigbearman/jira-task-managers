@@ -3,13 +3,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { use, useState } from 'react';
+import { toast } from 'sonner';
 import type { Ticket, AiAnalysis, GitOperation, TaskAction } from '@/types/api';
+import { PageHeader } from '@/components/shared/page-header';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Brain,
   Check,
   X,
   RotateCcw,
-  Pencil,
   GitBranch,
   ExternalLink,
   Clock,
@@ -59,26 +67,38 @@ export default function TicketDetailPage({ params }: { params: Promise<{ key: st
 
   const analyzeMut = useMutation({
     mutationFn: () => api.taskActions.analyze(key),
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); toast.success('Analysis queued'); },
+    onError: () => toast.error('Failed to start analysis'),
   });
 
   const approveMut = useMutation({
     mutationFn: () => api.taskActions.approve(key, { approach }),
-    onSuccess: () => { invalidateAll(); setShowApproachInput(false); },
+    onSuccess: () => { invalidateAll(); setShowApproachInput(false); toast.success('Approved! Code flow started.'); },
+    onError: () => toast.error('Failed to approve'),
   });
 
   const rejectMut = useMutation({
     mutationFn: () => api.taskActions.reject(key),
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); toast.success('Ticket rejected'); },
+    onError: () => toast.error('Failed to reject'),
   });
 
   const unrejectMut = useMutation({
     mutationFn: () => api.taskActions.unreject(key),
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); toast.success('Ticket unrejected'); },
+    onError: () => toast.error('Failed to unreject'),
   });
 
   if (isLoading) {
-    return <div className="animate-pulse text-muted-foreground">Loading ticket...</div>;
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-96" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Skeleton className="h-64 rounded-xl lg:col-span-2" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
+      </div>
+    );
   }
 
   if (!ticket) {
@@ -90,104 +110,95 @@ export default function TicketDetailPage({ params }: { params: Promise<{ key: st
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <span className="rounded bg-secondary px-2 py-0.5 text-xs font-medium">{ticket.issueType}</span>
-          <span className="text-sm text-muted-foreground">{ticket.priority}</span>
-        </div>
-        <h1 className="mt-1 text-2xl font-bold">{ticket.jiraTicketKey}: {ticket.summary}</h1>
-        <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <span>Status: <strong className="text-foreground">{ticket.status}</strong></span>
-          {ticket.assigneeDisplayName && <span>Assignee: {ticket.assigneeDisplayName}</span>}
-          {ticket.storyPoints && <span>SP: {ticket.storyPoints}</span>}
-          {ticket.labels?.length ? <span>Labels: {ticket.labels.join(', ')}</span> : null}
-        </div>
-      </div>
+      <PageHeader
+        title={`${ticket.jiraTicketKey}: ${ticket.summary}`}
+        breadcrumbs={[
+          { label: 'Tickets', href: '/tickets' },
+          { label: ticket.jiraTicketKey },
+        ]}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => analyzeMut.mutate()} disabled={analyzeMut.isPending}>
+              <Brain className="mr-2 h-4 w-4" />
+              {analyzeMut.isPending ? 'Analyzing...' : 'Analyze'}
+            </Button>
+            <Button variant="outline" className="border-green-500 text-green-600 hover:bg-green-500/10" onClick={() => setShowApproachInput(!showApproachInput)}>
+              <Check className="mr-2 h-4 w-4" />
+              Approve
+            </Button>
+            <Button variant="destructive" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending}>
+              <X className="mr-2 h-4 w-4" />
+              Reject
+            </Button>
+            <Button variant="outline" onClick={() => unrejectMut.mutate()} disabled={unrejectMut.isPending}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Unreject
+            </Button>
+          </div>
+        }
+      />
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => analyzeMut.mutate()}
-          disabled={analyzeMut.isPending}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Brain className="h-4 w-4" />
-          {analyzeMut.isPending ? 'Analyzing...' : 'Analyze'}
-        </button>
-        <button
-          onClick={() => setShowApproachInput(!showApproachInput)}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-        >
-          <Check className="h-4 w-4" />
-          Approve
-        </button>
-        <button
-          onClick={() => rejectMut.mutate()}
-          disabled={rejectMut.isPending}
-          className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
-        >
-          <X className="h-4 w-4" />
-          Reject
-        </button>
-        <button
-          onClick={() => unrejectMut.mutate()}
-          disabled={unrejectMut.isPending}
-          className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Unreject
-        </button>
+      {/* Ticket Meta */}
+      <div className="flex flex-wrap gap-3">
+        <Badge variant="secondary">{ticket.issueType}</Badge>
+        <StatusBadge status={ticket.status} />
+        {ticket.priority && <Badge variant="outline">{ticket.priority}</Badge>}
+        {ticket.assigneeDisplayName && (
+          <span className="text-sm text-muted-foreground">Assignee: {ticket.assigneeDisplayName}</span>
+        )}
+        {ticket.storyPoints && (
+          <span className="text-sm text-muted-foreground">SP: {ticket.storyPoints}</span>
+        )}
+        {ticket.labels?.length ? (
+          <span className="text-sm text-muted-foreground">Labels: {ticket.labels.join(', ')}</span>
+        ) : null}
       </div>
 
       {/* Approve approach input */}
       {showApproachInput && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <label className="text-sm font-medium">Approach / Instructions</label>
-          <textarea
-            value={approach}
-            onChange={(e) => setApproach(e.target.value)}
-            placeholder="Describe the approach for code changes..."
-            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            rows={4}
-          />
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={() => approveMut.mutate()}
-              disabled={approveMut.isPending}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              {approveMut.isPending ? 'Starting flow...' : 'Confirm Approve'}
-            </button>
-            <button
-              onClick={() => setShowApproachInput(false)}
-              className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-accent"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <Label>Approach / Instructions</Label>
+            <Textarea
+              value={approach}
+              onChange={(e) => setApproach(e.target.value)}
+              placeholder="Describe the approach for code changes..."
+              rows={4}
+            />
+            <div className="flex gap-2">
+              <Button onClick={() => approveMut.mutate()} disabled={approveMut.isPending} className="bg-green-600 hover:bg-green-700">
+                {approveMut.isPending ? 'Starting flow...' : 'Confirm Approve'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowApproachInput(false)}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Description + Comments */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Description */}
           {ticket.description && (
-            <section className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-3 text-sm font-semibold">Description</h2>
-              <div className="prose prose-sm dark:prose-invert max-w-none text-sm whitespace-pre-wrap">
-                {ticket.description}
-              </div>
-            </section>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                  {ticket.description}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Comments */}
           {comments.length > 0 && (
-            <section className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                <MessageSquare className="h-4 w-4" /> Comments ({comments.length})
-              </h2>
-              <div className="space-y-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <MessageSquare className="h-4 w-4" /> Comments ({comments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 {comments.slice(0, 10).map((c: any) => (
                   <div key={c.id} className="rounded-lg bg-muted/50 p-3">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -197,113 +208,104 @@ export default function TicketDetailPage({ params }: { params: Promise<{ key: st
                     <p className="mt-1 text-sm">{c.body?.substring(0, 300)}</p>
                   </div>
                 ))}
-              </div>
-            </section>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        {/* Right: AI Panel + Git Status + Actions */}
+        {/* Right sidebar */}
         <div className="space-y-6">
           {/* AI Analysis Panel */}
-          <section className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <Brain className="h-4 w-4" /> AI Analysis
-            </h2>
-            {aiAnalyses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No analysis yet. Click Analyze to start.</p>
-            ) : (
-              <div className="space-y-3">
-                {aiAnalyses.slice(0, 3).map((a) => (
-                  <div key={a.id} className="rounded-lg bg-muted/50 p-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className={`rounded px-1.5 py-0.5 font-medium ${
-                        a.status === 'completed' ? 'bg-green-500/10 text-green-500' :
-                        a.status === 'failed' ? 'bg-red-500/10 text-red-500' :
-                        'bg-yellow-500/10 text-yellow-500'
-                      }`}>
-                        {a.status}
-                      </span>
-                      <span className="text-muted-foreground">{a.model}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Brain className="h-4 w-4" /> AI Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {aiAnalyses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No analysis yet. Click Analyze to start.</p>
+              ) : (
+                <div className="space-y-3">
+                  {aiAnalyses.slice(0, 3).map((a) => (
+                    <div key={a.id} className="rounded-lg bg-muted/50 p-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <StatusBadge status={a.status} />
+                        <span className="text-muted-foreground">{a.model}</span>
+                      </div>
+                      {a.response && (
+                        <p className="mt-2 text-xs whitespace-pre-wrap">{a.response.substring(0, 500)}</p>
+                      )}
+                      {a.durationMs && (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" /> {(a.durationMs / 1000).toFixed(1)}s
+                          {a.costUsd && ` · $${a.costUsd}`}
+                        </p>
+                      )}
                     </div>
-                    {a.response && (
-                      <p className="mt-2 text-xs whitespace-pre-wrap">{a.response.substring(0, 500)}</p>
-                    )}
-                    {a.durationMs && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" /> {(a.durationMs / 1000).toFixed(1)}s
-                        {a.costUsd && ` · $${a.costUsd}`}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Git Status Panel */}
-          <section className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <GitBranch className="h-4 w-4" /> Git Status
-            </h2>
-            {gitOps.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No git operations yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {latestPr && (
-                  <a
-                    href={latestPr.prUrl!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    PR #{latestPr.prNumber}
-                  </a>
-                )}
-                {gitOps.slice(0, 5).map((op) => (
-                  <div key={op.id} className="flex items-center justify-between text-xs">
-                    <span>{op.operationType.replace(/_/g, ' ')}</span>
-                    <span className={`rounded px-1.5 py-0.5 font-medium ${
-                      op.status === 'completed' ? 'bg-green-500/10 text-green-500' :
-                      op.status === 'failed' ? 'bg-red-500/10 text-red-500' :
-                      'bg-yellow-500/10 text-yellow-500'
-                    }`}>
-                      {op.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <GitBranch className="h-4 w-4" /> Git Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {gitOps.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No git operations yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {latestPr && (
+                    <a
+                      href={latestPr.prUrl!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      PR #{latestPr.prNumber}
+                    </a>
+                  )}
+                  {gitOps.slice(0, 5).map((op) => (
+                    <div key={op.id} className="flex items-center justify-between text-xs">
+                      <span>{op.operationType.replace(/_/g, ' ')}</span>
+                      <StatusBadge status={op.status} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Action History */}
-          <section className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-3 text-sm font-semibold">Action History</h2>
-            {actions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No actions yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {actions.slice(0, 10).map((a) => (
-                  <div key={a.id} className="flex items-center justify-between text-xs">
-                    <div>
-                      <span className="mr-1 rounded bg-secondary px-1.5 py-0.5 font-medium">
-                        {a.actionType}
-                      </span>
-                      <span className="text-muted-foreground">{a.triggeredBy}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Action History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {actions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No actions yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {actions.slice(0, 10).map((a) => (
+                    <div key={a.id} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1">
+                        <Badge variant="secondary" className="text-xs">{a.actionType}</Badge>
+                        <span className="text-muted-foreground">{a.triggeredBy}</span>
+                      </div>
+                      <StatusBadge status={a.status} />
                     </div>
-                    <span className={`rounded px-1.5 py-0.5 font-medium ${
-                      a.status === 'completed' ? 'bg-green-500/10 text-green-500' :
-                      a.status === 'failed' ? 'bg-red-500/10 text-red-500' :
-                      a.status === 'processing' ? 'bg-yellow-500/10 text-yellow-500' :
-                      'bg-muted text-muted-foreground'
-                    }`}>
-                      {a.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

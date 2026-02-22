@@ -183,3 +183,44 @@ export interface ProjectStats {
   sprints: { total: number; active: number };
   versions: { total: number; unreleased: number };
 }
+
+export interface SyncLog {
+  id: string;
+  instanceId: string | null;
+  syncType: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  itemsProcessed: number | null;
+  itemsCreated: number | null;
+  itemsUpdated: number | null;
+  errorMessage: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+export interface SprintStats {
+  totalTickets: number;
+  completedTickets: number;
+  inProgressTickets: number;
+  todoTickets: number;
+  totalPoints: number;
+  completedPoints: number;
+}
+
+export interface CreateInstanceDto {
+  name: string;
+  slug: string;
+  baseUrl: string;
+  email: string;
+  apiToken: string;
+  syncEnabled?: boolean;
+}
+
+export interface UpdateInstanceDto {
+  name?: string;
+  baseUrl?: string;
+  email?: string;
+  apiToken?: string;
+  isActive?: boolean;
+  syncEnabled?: boolean;
+}

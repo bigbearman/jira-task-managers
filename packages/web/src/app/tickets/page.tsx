@@ -6,6 +6,29 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { Ticket } from '@/types/api';
 import { useState, Suspense } from 'react';
+import { PageHeader } from '@/components/shared/page-header';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { Pagination } from '@/components/shared/pagination';
+import { EmptyState } from '@/components/shared/empty-state';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ListTodo } from 'lucide-react';
 
 function TicketsContent() {
   const searchParams = useSearchParams();
@@ -28,118 +51,102 @@ function TicketsContent() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Tickets</h1>
+      <PageHeader title="Tickets" description={`${meta.total} tickets total`} />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="">All Statuses</option>
-          <option value="To Do">To Do</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Done">Done</option>
-          <option value="Backlog">Backlog</option>
-        </select>
-        <input
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="To Do">To Do</SelectItem>
+            <SelectItem value="In Progress">In Progress</SelectItem>
+            <SelectItem value="Done">Done</SelectItem>
+            <SelectItem value="Backlog">Backlog</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
           type="text"
           placeholder="Filter by assignee..."
           value={assignee}
           onChange={(e) => setAssignee(e.target.value)}
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          className="w-[200px]"
         />
       </div>
 
       {/* Table */}
       {isLoading ? (
-        <div className="animate-pulse text-muted-foreground">Loading tickets...</div>
+        <div className="space-y-2">
+          {[...Array(10)].map((_, i) => (
+            <Skeleton key={i} className="h-12 rounded" />
+          ))}
+        </div>
+      ) : tickets.length === 0 ? (
+        <EmptyState icon={ListTodo} title="No tickets found" description="Try adjusting your filters." />
       ) : (
-        <div className="rounded-xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="px-4 py-3">Key</th>
-                <th className="px-4 py-3">Summary</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Priority</th>
-                <th className="px-4 py-3">Assignee</th>
-                <th className="px-4 py-3">SP</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Key</TableHead>
+                <TableHead>Summary</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Assignee</TableHead>
+                <TableHead className="text-center">SP</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {tickets.map((t) => (
-                <tr key={t.id} className="hover:bg-accent">
-                  <td className="px-4 py-3">
+                <TableRow key={t.id}>
+                  <TableCell>
                     <Link href={`/tickets/${t.jiraTicketKey}`} className="font-medium text-primary hover:underline">
                       {t.jiraTicketKey}
                     </Link>
-                  </td>
-                  <td className="max-w-md truncate px-4 py-3">{t.summary}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.issueType}</td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="max-w-md truncate">{t.summary}</TableCell>
+                  <TableCell className="text-muted-foreground">{t.issueType}</TableCell>
+                  <TableCell>
                     <StatusBadge status={t.status} />
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.priority}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.assigneeDisplayName ?? '-'}</td>
-                  <td className="px-4 py-3 text-center">{t.storyPoints ?? '-'}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{t.priority}</TableCell>
+                  <TableCell className="text-muted-foreground">{t.assigneeDisplayName ?? '-'}</TableCell>
+                  <TableCell className="text-center">{t.storyPoints ?? '-'}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {/* Pagination */}
-      {meta.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => router.push(`/tickets?page=${page - 1}`)}
-            className="rounded border border-input px-3 py-1.5 text-sm disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span className="text-sm text-muted-foreground">
-            Page {meta.page} of {meta.totalPages}
-          </span>
-          <button
-            disabled={page >= meta.totalPages}
-            onClick={() => router.push(`/tickets?page=${page + 1}`)}
-            className="rounded border border-input px-3 py-1.5 text-sm disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={meta.page}
+        totalPages={meta.totalPages}
+        onPageChange={(p) => router.push(`/tickets?page=${p}`)}
+      />
     </div>
   );
 }
 
 export default function TicketsPage() {
   return (
-    <Suspense fallback={<div className="animate-pulse text-muted-foreground">Loading tickets...</div>}>
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-32" />
+          <div className="space-y-2">
+            {[...Array(10)].map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded" />
+            ))}
+          </div>
+        </div>
+      }
+    >
       <TicketsContent />
     </Suspense>
-  );
-}
-
-function StatusBadge({ status }: { status: string | null }) {
-  if (!status) return <span className="text-muted-foreground">-</span>;
-  const colors: Record<string, string> = {
-    Done: 'bg-green-500/10 text-green-500',
-    Closed: 'bg-green-500/10 text-green-500',
-    Resolved: 'bg-green-500/10 text-green-500',
-    'In Progress': 'bg-yellow-500/10 text-yellow-500',
-    Development: 'bg-yellow-500/10 text-yellow-500',
-    'To Do': 'bg-blue-500/10 text-blue-500',
-    Backlog: 'bg-muted text-muted-foreground',
-  };
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-muted text-muted-foreground'}`}>
-      {status}
-    </span>
   );
 }

@@ -87,6 +87,13 @@ export const api = {
   instances: {
     list: () => fetchApi<any>('/instances'),
     get: (slug: string) => fetchApi<any>(`/instances/${slug}`),
-    test: (slug: string) => fetchApi<any>(`/instances/${slug}/test`, { method: 'POST' }),
+    create: (body: any) =>
+      fetchApi<any>('/instances', { method: 'POST', body: JSON.stringify(body) }),
+    update: (slug: string, body: any) =>
+      fetchApi<any>(`/instances/${slug}`, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: (slug: string) =>
+      fetchApi<any>(`/instances/${slug}`, { method: 'DELETE' }),
+    test: (slug: string) =>
+      fetchApi<any>(`/instances/${slug}/test`, { method: 'POST' }),
   },
 };
