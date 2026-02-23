@@ -1,0 +1,81 @@
+Implement the following plan:
+
+# Implementation Plan: Fix Issues & Polish Project
+
+## Context
+After committing the sync filtering + pagination features, an audit revealed several code quality issues: incorrect TypeORM patterns, inline DTOs, deprecated column types, untyped API client, and a hacky debounce. This plan addresses all identified issues in priority order.
+
+## Changes
+
+### 1. Fix `deletedAt: undefined` in all repositories
+Remove `deletedAt: undefined` from all `where` clauses — TypeORM's `@DeleteDateColumn` already auto-filters soft-deleted records.
+
+**Files (8):**
+- `packages/backend/src/modules/database/repositories/ticket.repository.ts` (2 occurrences)
+- `packages/backend/src/modules/database/repositories/project.repository.ts` (3 occurrences)
+- `packages/backend/src/modules/database/repositories/jira-instance.repository.ts` (3 occurrences)
+- `packages/backend/src/modules/database/repositories/sprint.repository.ts` (3 occurrences)
+- `packages/backend/src/modules/database/repositories/version.repository.ts` (3 occurrences)
+- `packages/backend/src/modules/database/repositories/task-action.repository.ts` (2 occurrences)
+- `packages/backend/src/modules/database/repositories/ai-analysis.repository.ts` (2 occurrences)
+- `packages/backend/src/modules/database/repositories/git-operation.repository.ts` (2 occurrences)
+
+### 2. Extract inline DTOs from instance controller
+Move `CreateInstanceDto` and `UpdateInstanceDto` from `instance.controller.ts` to `dtos/instance.dto.ts`. Update barrel export in `dtos/index.ts`.
+
+**Files:**
+- `packages/backend/src/modules/api/controllers/instance.controller.ts` — remove inline DTOs, import from dtos
+- `packages/backend/src/modules/api/dtos/instance.dto.ts` — new file
+- `packages/backend/src/modules/api/dtos/index.ts` — add export
+
+### 3. Change `simple-array` to PostgreSQL `text[]` for assignees/projectKeys
+Replace deprecated `simple-array` type with native PostgreSQL array type.
+
+**File:**
+- `packages/backend/src/modules/database/entities/jira-instance.entity.ts`
+
+### 4. Add `@Throttle` decorators to all controllers
+Add rate limiting per project coding standards.
+
+**Files (7):**
+- `packages/backend/src/modules/api/controllers/instance.controller.ts`
+- `packages/backend/src/modules/api/controllers/project.controller.ts`
+- `packages/backend/src/modules/api/controllers/ticket.controller.ts`
+- `packages/backend/src/modules/api/controllers/dashboard.controller.ts`
+- `packages/backend/src/modules/api/controllers/sprint.controller.ts`
+- `packages/backend/src/modules/api/controllers/version.controller.ts`
+- `packages/backend/src/modules/api/controllers/notification.controller.ts`
+
+### 5. Type the API client properly
+Replace `fetchApi<any>` with proper generic types using existing interfaces from `types/api.ts`.
+
+**File:**
+- `packages/web/src/lib/api.ts`
+
+### 6. Fix debounce in projects page
+Replace `globalThis` hack with proper `useEffect` cleanup pattern.
+
+**File:**
+- `packages/web/src/app/projects/page.tsx`
+
+### 7. Clean up unused queue constants
+Remove unused constants: `GENERATE_SOLUTION`, `GENERATE_TESTS`, `CREATE_BRANCH`, `RUN_TESTS`, `COMMIT_AND_PUSH`, `CREATE_PR`. Keep `SYNC_VERSION_TICKETS` if version-ticket sync via queue is planned.
+
+**File:**
+- `packages/backend/src/shared/constants/queue.ts`
+
+## Verification
+1. `make build` — ensure backend + web compile without errors
+2. `make lint` — check for linting issues
+3. Docker restart and test sync flow still works
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/kienduong/.REDACTED.jsonl
+
+---
+
+run docker update
+
+---
+
+[Request interrupted by user for tool use]
