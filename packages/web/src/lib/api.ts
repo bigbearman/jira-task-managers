@@ -1,3 +1,26 @@
+import type {
+  ApiResponse,
+  PaginatedResponse,
+  DashboardOverview,
+  SprintVelocity,
+  AiStats,
+  Project,
+  ProjectStats,
+  Sprint,
+  SprintStats,
+  Version,
+  Ticket,
+  Comment,
+  Worklog,
+  AiAnalysis,
+  GitOperation,
+  TaskAction,
+  SyncLog,
+  JiraInstance,
+  CreateInstanceDto,
+  UpdateInstanceDto,
+} from '@/types/api';
+
 const API_BASE = '/api/v1';
 
 async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
@@ -17,13 +40,12 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-// Dashboard
 export const api = {
   dashboard: {
-    overview: () => fetchApi<any>('/dashboard/overview'),
+    overview: () => fetchApi<ApiResponse<DashboardOverview>>('/dashboard/overview'),
     sprintVelocity: (projectKey?: string) =>
-      fetchApi<any>(`/dashboard/sprint-velocity${projectKey ? `?projectKey=${projectKey}` : ''}`),
-    aiStats: () => fetchApi<any>('/dashboard/ai-stats'),
+      fetchApi<ApiResponse<SprintVelocity[]>>(`/dashboard/sprint-velocity${projectKey ? `?projectKey=${projectKey}` : ''}`),
+    aiStats: () => fetchApi<ApiResponse<AiStats>>('/dashboard/ai-stats'),
   },
 
   projects: {
@@ -31,29 +53,29 @@ export const api = {
       const qs = params ? '?' + new URLSearchParams(
         Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]),
       ).toString() : '';
-      return fetchApi<any>(`/projects${qs}`);
+      return fetchApi<PaginatedResponse<Project>>(`/projects${qs}`);
     },
-    get: (key: string) => fetchApi<any>(`/projects/${key}`),
-    stats: (key: string) => fetchApi<any>(`/projects/${key}/stats`),
+    get: (key: string) => fetchApi<ApiResponse<Project>>(`/projects/${key}`),
+    stats: (key: string) => fetchApi<ApiResponse<ProjectStats>>(`/projects/${key}/stats`),
   },
 
   sprints: {
-    byProject: (key: string) => fetchApi<any>(`/projects/${key}/sprints`),
+    byProject: (key: string) => fetchApi<ApiResponse<Sprint[]>>(`/projects/${key}/sprints`),
     active: (projectKey?: string) =>
-      fetchApi<any>(`/sprints/active${projectKey ? `?projectKey=${projectKey}` : ''}`),
-    get: (id: string) => fetchApi<any>(`/sprints/${id}`),
+      fetchApi<ApiResponse<Sprint[]>>(`/sprints/active${projectKey ? `?projectKey=${projectKey}` : ''}`),
+    get: (id: string) => fetchApi<ApiResponse<Sprint>>(`/sprints/${id}`),
     tickets: (id: string, page = 1, limit = 20) =>
-      fetchApi<any>(`/sprints/${id}/tickets?page=${page}&limit=${limit}`),
-    stats: (id: string) => fetchApi<any>(`/sprints/${id}/stats`),
+      fetchApi<PaginatedResponse<Ticket>>(`/sprints/${id}/tickets?page=${page}&limit=${limit}`),
+    stats: (id: string) => fetchApi<ApiResponse<SprintStats>>(`/sprints/${id}/stats`),
   },
 
   versions: {
-    byProject: (key: string) => fetchApi<any>(`/projects/${key}/versions`),
+    byProject: (key: string) => fetchApi<ApiResponse<Version[]>>(`/projects/${key}/versions`),
     unreleased: (projectKey?: string) =>
-      fetchApi<any>(`/versions/unreleased${projectKey ? `?projectKey=${projectKey}` : ''}`),
-    get: (id: string) => fetchApi<any>(`/versions/${id}`),
+      fetchApi<ApiResponse<Version[]>>(`/versions/unreleased${projectKey ? `?projectKey=${projectKey}` : ''}`),
+    get: (id: string) => fetchApi<ApiResponse<Version>>(`/versions/${id}`),
     tickets: (id: string, page = 1, limit = 20) =>
-      fetchApi<any>(`/versions/${id}/tickets?page=${page}&limit=${limit}`),
+      fetchApi<PaginatedResponse<Ticket>>(`/versions/${id}/tickets?page=${page}&limit=${limit}`),
   },
 
   tickets: {
@@ -61,44 +83,44 @@ export const api = {
       const qs = params ? '?' + new URLSearchParams(
         Object.entries(params).map(([k, v]) => [k, String(v)]),
       ).toString() : '';
-      return fetchApi<any>(`/tickets${qs}`);
+      return fetchApi<PaginatedResponse<Ticket>>(`/tickets${qs}`);
     },
-    get: (key: string) => fetchApi<any>(`/tickets/${key}`),
-    comments: (key: string) => fetchApi<any>(`/tickets/${key}/comments`),
-    worklogs: (key: string) => fetchApi<any>(`/tickets/${key}/worklogs`),
-    aiAnalysis: (key: string) => fetchApi<any>(`/tickets/${key}/ai-analysis`),
-    gitStatus: (key: string) => fetchApi<any>(`/tickets/${key}/git-status`),
-    actions: (key: string) => fetchApi<any>(`/tickets/${key}/actions`),
+    get: (key: string) => fetchApi<ApiResponse<Ticket>>(`/tickets/${key}`),
+    comments: (key: string) => fetchApi<ApiResponse<Comment[]>>(`/tickets/${key}/comments`),
+    worklogs: (key: string) => fetchApi<ApiResponse<Worklog[]>>(`/tickets/${key}/worklogs`),
+    aiAnalysis: (key: string) => fetchApi<ApiResponse<AiAnalysis | null>>(`/tickets/${key}/ai-analysis`),
+    gitStatus: (key: string) => fetchApi<ApiResponse<GitOperation[]>>(`/tickets/${key}/git-status`),
+    actions: (key: string) => fetchApi<ApiResponse<TaskAction[]>>(`/tickets/${key}/actions`),
   },
 
   taskActions: {
-    analyze: (key: string, body?: any) =>
-      fetchApi<any>(`/tickets/${key}/analyze`, { method: 'POST', body: JSON.stringify(body ?? {}) }),
-    approve: (key: string, body?: any) =>
-      fetchApi<any>(`/tickets/${key}/approve`, { method: 'POST', body: JSON.stringify(body ?? {}) }),
+    analyze: (key: string, body?: Record<string, unknown>) =>
+      fetchApi<ApiResponse<TaskAction>>(`/tickets/${key}/analyze`, { method: 'POST', body: JSON.stringify(body ?? {}) }),
+    approve: (key: string, body?: Record<string, unknown>) =>
+      fetchApi<ApiResponse<TaskAction>>(`/tickets/${key}/approve`, { method: 'POST', body: JSON.stringify(body ?? {}) }),
     reject: (key: string) =>
-      fetchApi<any>(`/tickets/${key}/reject`, { method: 'POST', body: '{}' }),
+      fetchApi<ApiResponse<TaskAction>>(`/tickets/${key}/reject`, { method: 'POST', body: '{}' }),
     unreject: (key: string) =>
-      fetchApi<any>(`/tickets/${key}/unreject`, { method: 'POST', body: '{}' }),
-    editApproach: (key: string, body: any) =>
-      fetchApi<any>(`/tickets/${key}/approach`, { method: 'PUT', body: JSON.stringify(body) }),
+      fetchApi<ApiResponse<TaskAction>>(`/tickets/${key}/unreject`, { method: 'POST', body: '{}' }),
+    editApproach: (key: string, body: Record<string, unknown>) =>
+      fetchApi<ApiResponse<TaskAction>>(`/tickets/${key}/approach`, { method: 'PUT', body: JSON.stringify(body) }),
   },
 
   sync: {
-    trigger: () => fetchApi<any>('/sync', { method: 'POST' }),
-    logs: () => fetchApi<any>('/sync/logs'),
+    trigger: () => fetchApi<ApiResponse<{ message: string }>>('/sync', { method: 'POST' }),
+    logs: () => fetchApi<ApiResponse<SyncLog[]>>('/sync/logs'),
   },
 
   instances: {
-    list: () => fetchApi<any>('/instances'),
-    get: (slug: string) => fetchApi<any>(`/instances/${slug}`),
-    create: (body: any) =>
-      fetchApi<any>('/instances', { method: 'POST', body: JSON.stringify(body) }),
-    update: (slug: string, body: any) =>
-      fetchApi<any>(`/instances/${slug}`, { method: 'PUT', body: JSON.stringify(body) }),
+    list: () => fetchApi<ApiResponse<JiraInstance[]>>('/instances'),
+    get: (slug: string) => fetchApi<ApiResponse<JiraInstance>>(`/instances/${slug}`),
+    create: (body: CreateInstanceDto) =>
+      fetchApi<ApiResponse<JiraInstance>>('/instances', { method: 'POST', body: JSON.stringify(body) }),
+    update: (slug: string, body: UpdateInstanceDto) =>
+      fetchApi<ApiResponse<JiraInstance>>(`/instances/${slug}`, { method: 'PUT', body: JSON.stringify(body) }),
     delete: (slug: string) =>
-      fetchApi<any>(`/instances/${slug}`, { method: 'DELETE' }),
+      fetchApi<ApiResponse<{ message: string }>>(`/instances/${slug}`, { method: 'DELETE' }),
     test: (slug: string) =>
-      fetchApi<any>(`/instances/${slug}/test`, { method: 'POST' }),
+      fetchApi<ApiResponse<{ success: boolean }>>(`/instances/${slug}/test`, { method: 'POST' }),
   },
 };

@@ -11,14 +11,14 @@ export class AiAnalysisRepository extends Repository<AiAnalysis> {
 
   async findByTicketId(ticketId: string): Promise<AiAnalysis[]> {
     return this.find({
-      where: { ticketId, deletedAt: undefined },
+      where: { ticketId },
       order: { createdAt: 'DESC' },
     });
   }
 
   async findLatestByTicketId(ticketId: string): Promise<AiAnalysis | null> {
     return this.findOne({
-      where: { ticketId, deletedAt: undefined },
+      where: { ticketId },
       order: { createdAt: 'DESC' },
     });
   }

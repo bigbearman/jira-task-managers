@@ -11,21 +11,21 @@ export class ProjectRepository extends Repository<Project> {
 
   async findByKey(key: string): Promise<Project | null> {
     return this.findOne({
-      where: { jiraProjectKey: key, deletedAt: undefined },
+      where: { jiraProjectKey: key },
       relations: ['instance'],
     });
   }
 
   async findByInstanceId(instanceId: string): Promise<Project[]> {
     return this.find({
-      where: { instanceId, isActive: true, deletedAt: undefined },
+      where: { instanceId, isActive: true },
       order: { name: 'ASC' },
     });
   }
 
   async findAllActive(): Promise<Project[]> {
     return this.find({
-      where: { isActive: true, deletedAt: undefined },
+      where: { isActive: true },
       relations: ['instance'],
       order: { name: 'ASC' },
     });
@@ -34,8 +34,7 @@ export class ProjectRepository extends Repository<Project> {
   async findAllActivePaginated(page: number, limit: number, search?: string) {
     const qb = this.createQueryBuilder('p')
       .leftJoinAndSelect('p.instance', 'i')
-      .where('p.is_active = true')
-      .andWhere('p.deleted_at IS NULL');
+      .where('p.is_active = true');
 
     if (search) {
       qb.andWhere('(p.jira_project_key ILIKE :search OR p.name ILIKE :search)', { search: `%${search}%` });

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { JiraInstance, SyncLog } from '@/types/api';
+import type { JiraInstance, SyncLog, CreateInstanceDto, UpdateInstanceDto } from '@/types/api';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/shared/page-header';
@@ -104,7 +104,7 @@ export default function SettingsPage() {
   const logs: SyncLog[] = syncLogs?.data ?? [];
 
   const createMut = useMutation({
-    mutationFn: (body: Record<string, any>) => api.instances.create(body as any),
+    mutationFn: (body: CreateInstanceDto) => api.instances.create(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instances'] });
       setShowDialog(false);
@@ -115,7 +115,7 @@ export default function SettingsPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ slug, body }: { slug: string; body: Partial<InstanceForm> }) =>
+    mutationFn: ({ slug, body }: { slug: string; body: UpdateInstanceDto }) =>
       api.instances.update(slug, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instances'] });
@@ -194,7 +194,7 @@ export default function SettingsPage() {
       .filter(Boolean);
 
     if (editingSlug) {
-      const body: any = { name: form.name, baseUrl: form.baseUrl, email: form.email, syncEnabled: form.syncEnabled, assignees, projectKeys };
+      const body: UpdateInstanceDto = { name: form.name, baseUrl: form.baseUrl, email: form.email, syncEnabled: form.syncEnabled, assignees, projectKeys };
       if (form.apiToken) body.apiToken = form.apiToken;
       updateMut.mutate({ slug: editingSlug, body });
     } else {
@@ -202,7 +202,7 @@ export default function SettingsPage() {
         toast.error('Slug and API Token are required for new instances');
         return;
       }
-      createMut.mutate({ ...form, assignees, projectKeys });
+      createMut.mutate({ name: form.name, slug: form.slug, baseUrl: form.baseUrl, email: form.email, apiToken: form.apiToken, syncEnabled: form.syncEnabled, assignees, projectKeys });
     }
   };
 

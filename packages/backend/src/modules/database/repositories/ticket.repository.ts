@@ -22,19 +22,18 @@ export class TicketRepository extends Repository<Ticket> {
 
   async findByKey(key: string): Promise<Ticket | null> {
     return this.findOne({
-      where: { jiraTicketKey: key, deletedAt: undefined },
+      where: { jiraTicketKey: key },
       relations: ['project', 'comments', 'worklogs', 'sprints', 'fixVersions', 'taskActions', 'aiAnalyses', 'gitOperations'],
     });
   }
 
   async findByKeySimple(key: string): Promise<Ticket | null> {
-    return this.findOne({ where: { jiraTicketKey: key, deletedAt: undefined } });
+    return this.findOne({ where: { jiraTicketKey: key } });
   }
 
   async findWithFilters(options: TicketFilterOptions): Promise<[Ticket[], number]> {
     const qb = this.createQueryBuilder('ticket')
-      .leftJoinAndSelect('ticket.project', 'project')
-      .where('ticket.deletedAt IS NULL');
+      .leftJoinAndSelect('ticket.project', 'project');
 
     if (options.projectKey) {
       qb.andWhere('project.jiraProjectKey = :projectKey', { projectKey: options.projectKey });
@@ -68,7 +67,6 @@ export class TicketRepository extends Repository<Ticket> {
     return this.createQueryBuilder('ticket')
       .innerJoin('ticket.sprints', 'sprint')
       .where('sprint.jiraSprintId = :jiraSprintId', { jiraSprintId })
-      .andWhere('ticket.deletedAt IS NULL')
       .orderBy('ticket.status', 'ASC')
       .addOrderBy('ticket.priority', 'ASC')
       .getMany();

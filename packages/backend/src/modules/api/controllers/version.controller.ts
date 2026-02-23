@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Throttle } from '@nestjs/throttler';
 import { VersionService } from '../services/version.service';
 import { PaginationDto } from '../dtos';
 import { CACHE_TTL } from '@/shared/constants/cache';
@@ -11,6 +12,7 @@ export class VersionController {
   constructor(private readonly versionService: VersionService) {}
 
   @Get('projects/:key/versions')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'List versions for a project' })
@@ -20,6 +22,7 @@ export class VersionController {
   }
 
   @Get('versions/unreleased')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'Get unreleased versions (optionally filtered by project)' })
@@ -29,6 +32,7 @@ export class VersionController {
   }
 
   @Get('versions/:id')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.DETAIL * 1000)
   @ApiOperation({ summary: 'Get version by ID' })
@@ -38,6 +42,7 @@ export class VersionController {
   }
 
   @Get('versions/:id/tickets')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get tickets in a version' })
   async getTickets(@Param('id') id: string, @Query() dto: PaginationDto) {
     const result = await this.versionService.getTickets(id, dto.page, dto.limit);

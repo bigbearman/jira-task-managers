@@ -11,14 +11,14 @@ export class GitOperationRepository extends Repository<GitOperation> {
 
   async findByTicketId(ticketId: string): Promise<GitOperation[]> {
     return this.find({
-      where: { ticketId, deletedAt: undefined },
+      where: { ticketId },
       order: { createdAt: 'DESC' },
     });
   }
 
   async findByTaskActionId(taskActionId: string): Promise<GitOperation[]> {
     return this.find({
-      where: { taskActionId, deletedAt: undefined },
+      where: { taskActionId },
       order: { createdAt: 'ASC' },
     });
   }

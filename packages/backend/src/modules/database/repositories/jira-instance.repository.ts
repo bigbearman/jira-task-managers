@@ -10,19 +10,19 @@ export class JiraInstanceRepository extends Repository<JiraInstance> {
   }
 
   async findBySlug(slug: string): Promise<JiraInstance | null> {
-    return this.findOne({ where: { slug, deletedAt: undefined }, relations: ['projects'] });
+    return this.findOne({ where: { slug }, relations: ['projects'] });
   }
 
   async findAllActive(): Promise<JiraInstance[]> {
     return this.find({
-      where: { isActive: true, deletedAt: undefined },
+      where: { isActive: true },
       order: { name: 'ASC' },
     });
   }
 
   async findSyncEnabled(): Promise<JiraInstance[]> {
     return this.find({
-      where: { isActive: true, syncEnabled: true, deletedAt: undefined },
+      where: { isActive: true, syncEnabled: true },
       order: { name: 'ASC' },
     });
   }

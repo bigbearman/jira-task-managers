@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Throttle } from '@nestjs/throttler';
 import { DashboardService } from '../services/dashboard.service';
 import { CACHE_TTL } from '@/shared/constants/cache';
 
@@ -11,6 +12,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('overview')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @CacheTTL(CACHE_TTL.DASHBOARD * 1000)
   @ApiOperation({ summary: 'Dashboard overview (projects, ticket stats, active sprints, recent actions)' })
   async getOverview() {
@@ -19,6 +21,7 @@ export class DashboardController {
   }
 
   @Get('sprint-velocity')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'Sprint velocity metrics' })
   async getSprintVelocity(@Query('projectKey') projectKey?: string) {
@@ -27,6 +30,7 @@ export class DashboardController {
   }
 
   @Get('ai-stats')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'AI usage stats (analyses count, tokens, cost)' })
   async getAiStats() {

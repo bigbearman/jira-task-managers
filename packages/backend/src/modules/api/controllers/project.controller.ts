@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Throttle } from '@nestjs/throttler';
 import { ProjectService } from '../services/project.service';
 import { PaginationDto } from '../dtos/pagination.dto';
 import { CACHE_TTL } from '@/shared/constants/cache';
@@ -11,6 +12,7 @@ export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
   @Get()
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'List all projects across all instances' })
@@ -20,6 +22,7 @@ export class ProjectController {
   }
 
   @Get(':key')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.DETAIL * 1000)
   @ApiOperation({ summary: 'Get project by key' })
@@ -29,6 +32,7 @@ export class ProjectController {
   }
 
   @Get(':key/stats')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.DASHBOARD * 1000)
   @ApiOperation({ summary: 'Get project stats (ticket/sprint/version counts)' })

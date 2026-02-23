@@ -11,7 +11,7 @@ export class TaskActionRepository extends Repository<TaskAction> {
 
   async findByTicketId(ticketId: string): Promise<TaskAction[]> {
     return this.find({
-      where: { ticketId, deletedAt: undefined },
+      where: { ticketId },
       order: { createdAt: 'DESC' },
       relations: ['aiAnalyses', 'gitOperations'],
     });
@@ -19,7 +19,7 @@ export class TaskActionRepository extends Repository<TaskAction> {
 
   async findLatestByTicketId(ticketId: string): Promise<TaskAction | null> {
     return this.findOne({
-      where: { ticketId, deletedAt: undefined },
+      where: { ticketId },
       order: { createdAt: 'DESC' },
       relations: ['aiAnalyses', 'gitOperations'],
     });

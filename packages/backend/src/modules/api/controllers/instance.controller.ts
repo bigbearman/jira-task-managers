@@ -11,76 +11,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JiraInstanceRepository } from '@/database';
 import { JiraService } from '@/jira/jira.service';
-import { IsString, IsOptional, IsBoolean, IsUrl, IsArray } from 'class-validator';
-
-class CreateInstanceDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  slug: string;
-
-  @IsUrl()
-  baseUrl: string;
-
-  @IsString()
-  email: string;
-
-  @IsString()
-  apiToken: string;
-
-  @IsOptional()
-  @IsBoolean()
-  syncEnabled?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  assignees?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  projectKeys?: string[];
-}
-
-class UpdateInstanceDto {
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsUrl()
-  baseUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  apiToken?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  syncEnabled?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  assignees?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  projectKeys?: string[];
-}
+import { CreateInstanceDto, UpdateInstanceDto } from '../dtos';
 
 @ApiTags('Jira Instances')
 @Controller('instances')
@@ -91,6 +25,7 @@ export class InstanceController {
   ) {}
 
   @Get()
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'List all Jira instances' })
   async list() {
     const instances = await this.instanceRepo.findAllActive();
@@ -98,6 +33,7 @@ export class InstanceController {
   }
 
   @Get(':slug')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get instance by slug' })
   async getBySlug(@Param('slug') slug: string) {
     const instance = await this.instanceRepo.findBySlug(slug);
@@ -106,6 +42,7 @@ export class InstanceController {
   }
 
   @Post()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Create new Jira instance' })
   async create(@Body() dto: CreateInstanceDto) {
     const instance = this.instanceRepo.create({
@@ -123,6 +60,7 @@ export class InstanceController {
   }
 
   @Put(':slug')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Update instance' })
   async update(@Param('slug') slug: string, @Body() dto: UpdateInstanceDto) {
     const instance = await this.instanceRepo.findBySlug(slug);
@@ -144,6 +82,7 @@ export class InstanceController {
   }
 
   @Delete(':slug')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate instance (soft delete)' })
   async deactivate(@Param('slug') slug: string) {
@@ -154,6 +93,7 @@ export class InstanceController {
   }
 
   @Post(':slug/test')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Test Jira connection' })
   async testConnection(@Param('slug') slug: string) {
     const instance = await this.instanceRepo.findBySlug(slug);

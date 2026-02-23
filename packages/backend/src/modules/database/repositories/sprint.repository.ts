@@ -11,18 +11,18 @@ export class SprintRepository extends Repository<Sprint> {
 
   async findByProjectId(jiraProjectId: string): Promise<Sprint[]> {
     return this.find({
-      where: { jiraProjectId, deletedAt: undefined },
+      where: { jiraProjectId },
       order: { startDate: 'DESC' },
     });
   }
 
   async findActive(jiraProjectId?: string): Promise<Sprint[]> {
-    const where: any = { state: 'active', deletedAt: undefined };
+    const where: any = { state: 'active' };
     if (jiraProjectId) where.jiraProjectId = jiraProjectId;
     return this.find({ where, order: { startDate: 'DESC' } });
   }
 
   async findByJiraSprintId(jiraSprintId: number): Promise<Sprint | null> {
-    return this.findOne({ where: { jiraSprintId, deletedAt: undefined } });
+    return this.findOne({ where: { jiraSprintId } });
   }
 }

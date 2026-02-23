@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(sleep 5 && curl -s -X POST http://localhost:3000/api/v1/sync | python3 -m json.tool 2>&1)",
+      "Bash(sleep 2 && curl -s -X POST http://localhost:3000/api/v1/sync | python3 -m json.tool 2>&1)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

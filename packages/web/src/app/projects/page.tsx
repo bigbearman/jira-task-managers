@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import type { Project } from '@/types/api';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Pagination } from '@/components/shared/pagination';
@@ -19,6 +19,13 @@ export default function ProjectsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ['projects', { page, search: debouncedSearch }],
@@ -31,9 +38,8 @@ export default function ProjectsPage() {
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPage(1);
-    // Simple debounce via timeout
-    clearTimeout((globalThis as any).__projectSearchTimer);
-    (globalThis as any).__projectSearchTimer = setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
       setDebouncedSearch(value);
     }, 300);
   };

@@ -5,3 +5,4 @@ export {
   ApproveTicketDto,
   EditApproachDto,
 } from './ticket.dto';
+export { CreateInstanceDto, UpdateInstanceDto } from './instance.dto';

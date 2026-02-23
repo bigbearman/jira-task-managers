@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Throttle } from '@nestjs/throttler';
 import { SprintService } from '../services/sprint.service';
 import { PaginationDto } from '../dtos';
 import { CACHE_TTL } from '@/shared/constants/cache';
@@ -11,6 +12,7 @@ export class SprintController {
   constructor(private readonly sprintService: SprintService) {}
 
   @Get('projects/:key/sprints')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'List sprints for a project' })
@@ -20,6 +22,7 @@ export class SprintController {
   }
 
   @Get('sprints/active')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.DETAIL * 1000)
   @ApiOperation({ summary: 'Get active sprints (optionally filtered by project)' })
@@ -29,6 +32,7 @@ export class SprintController {
   }
 
   @Get('sprints/:id')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.DETAIL * 1000)
   @ApiOperation({ summary: 'Get sprint by ID' })
@@ -38,6 +42,7 @@ export class SprintController {
   }
 
   @Get('sprints/:id/tickets')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get tickets in a sprint' })
   async getTickets(@Param('id') id: string, @Query() dto: PaginationDto) {
     const result = await this.sprintService.getTickets(id, dto.page, dto.limit);
@@ -45,6 +50,7 @@ export class SprintController {
   }
 
   @Get('sprints/:id/stats')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.DASHBOARD * 1000)
   @ApiOperation({ summary: 'Get sprint stats (ticket counts by status)' })

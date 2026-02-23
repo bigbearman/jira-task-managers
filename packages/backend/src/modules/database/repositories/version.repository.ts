@@ -11,18 +11,18 @@ export class VersionRepository extends Repository<Version> {
 
   async findByProjectId(jiraProjectId: string): Promise<Version[]> {
     return this.find({
-      where: { jiraProjectId, deletedAt: undefined },
+      where: { jiraProjectId },
       order: { releaseDate: 'DESC' },
     });
   }
 
   async findUnreleased(jiraProjectId?: string): Promise<Version[]> {
-    const where: any = { isReleased: false, isArchived: false, deletedAt: undefined };
+    const where: any = { isReleased: false, isArchived: false };
     if (jiraProjectId) where.jiraProjectId = jiraProjectId;
     return this.find({ where, order: { name: 'ASC' } });
   }
 
   async findByJiraVersionId(jiraVersionId: string): Promise<Version | null> {
-    return this.findOne({ where: { jiraVersionId, deletedAt: undefined } });
+    return this.findOne({ where: { jiraVersionId } });
   }
 }
