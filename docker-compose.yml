@@ -144,7 +144,10 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      API_URL: http://api:3000
       NEXT_PUBLIC_API_URL: ""
+    depends_on:
+      - api
     ports:
       - "${WEB_PORT:-3001}:3001"
     networks:

@@ -6,7 +6,7 @@ import { Job } from 'bullmq';
 import { QUEUE_NAME, QUEUE_PROCESSOR } from '@/shared/constants/queue';
 import { JiraService } from '@/jira/jira.service';
 import { JiraAgileService } from '@/jira/jira-agile.service';
-import { JiraCredentials, JiraIssue } from '@/jira/jira.types';
+import { JiraCredentials, JiraIssue, JiraVersion } from '@/jira/jira.types';
 import { parseAdfToText } from '@/shared/utils/jira-adf-parser';
 import {
   JiraInstanceRepository,
@@ -83,31 +83,51 @@ export class SyncConsumer extends WorkerHost {
       // 1. Sync projects
       await this.queueService.addSyncProjectsJob(instanceId);
 
-      // 2. Wait briefly then sync sprints + versions + tickets per project
+      // 2. Sync sprints + versions + tickets per project
       const instance = await this.instanceRepo.findOne({ where: { id: instanceId }, relations: ['projects'] });
+      let jobsQueued = 0;
+
+      // Capture lastSyncedAt BEFORE updating it, so ticket sync jobs use the correct value
+      const lastSyncedAt = instance?.lastSyncedAt ?? null;
+
       if (instance?.projects) {
         for (const project of instance.projects) {
-          await this.queueService.addSyncTicketsJob(instanceId, project.jiraProjectKey, project.jiraProjectId);
+          // Create individual sync log for each project's ticket sync
+          const ticketSyncLog = await this.syncLogRepo.createLog({
+            syncType: `tickets:${project.jiraProjectKey}`,
+            entityType: 'ticket',
+            instanceId,
+            triggeredBy,
+          });
+          await this.queueService.addSyncTicketsJob(instanceId, project.jiraProjectKey, project.jiraProjectId, ticketSyncLog.id, lastSyncedAt);
           await this.queueService.addSyncVersionsJob(instanceId, project.jiraProjectKey, project.jiraProjectId);
+          jobsQueued++;
         }
       }
 
       // Sync boards and sprints
       const creds = await this.getCredentials(instanceId);
-      const boards = await this.jiraAgileService.getBoards(creds);
-      for (const board of boards) {
-        const projectId = board.location?.projectId?.toString();
-        if (projectId) {
-          await this.queueService.addSyncSprintsJob(instanceId, board.id, projectId);
+      try {
+        const boards = await this.jiraAgileService.getBoards(creds);
+        this.logger.log(`[SYNC_ALL] Found ${boards.length} boards`);
+        for (const board of boards) {
+          const projectId = board.location?.projectId?.toString();
+          this.logger.log(`[SYNC_ALL] Board ${board.id} (${board.name}), projectId=${projectId}`);
+          if (projectId) {
+            await this.queueService.addSyncSprintsJob(instanceId, board.id, projectId);
+            jobsQueued++;
+          }
         }
+      } catch (boardError: any) {
+        this.logger.warn(`[SYNC_ALL] Board sync failed (non-fatal): ${boardError.message}`);
       }
 
-      await this.syncLogRepo.markCompleted(syncLog.id, { processed: 1, created: 0, updated: 0, failed: 0 });
+      await this.syncLogRepo.markCompleted(syncLog.id, { processed: jobsQueued, created: 0, updated: 0, failed: 0 });
       await this.instanceRepo.update(instanceId, { lastSyncedAt: new Date() });
 
       // Invalidate all cached data after sync
       await this.cacheManager.clear();
-      this.logger.log(`[SYNC_ALL] Cache invalidated after successful sync`);
+      this.logger.log(`[SYNC_ALL] Cache invalidated after successful sync, ${jobsQueued} sub-jobs queued`);
     } catch (error: any) {
       await this.syncLogRepo.markFailed(syncLog.id, error.message);
       throw error;
@@ -119,7 +139,16 @@ export class SyncConsumer extends WorkerHost {
     const creds = await this.getCredentials(instanceId);
     this.logger.log(`[SYNC_PROJECTS] Instance: ${instanceId}`);
 
-    const projects = await this.jiraService.getProjects(creds);
+    const instance = await this.instanceRepo.findOne({ where: { id: instanceId } });
+    let projects = await this.jiraService.getProjects(creds);
+
+    // Filter by projectKeys if configured
+    if (instance?.projectKeys && instance.projectKeys.length > 0) {
+      const allowedKeys = new Set(instance.projectKeys.map(k => k.toUpperCase()));
+      projects = projects.filter(p => allowedKeys.has(p.key.toUpperCase()));
+      this.logger.log(`[SYNC_PROJECTS] Filtered to ${projects.length} projects by keys: ${instance.projectKeys.join(', ')}`);
+    }
+
     let created = 0, updated = 0;
 
     for (const p of projects) {
@@ -177,15 +206,23 @@ export class SyncConsumer extends WorkerHost {
         boardId: s.originBoardId || boardId,
       };
 
+      let sprintDbId: string;
       if (existing) {
         await this.sprintRepo.update(existing.id, sprintData);
+        sprintDbId = existing.id;
         updated++;
       } else {
-        await this.sprintRepo.save(this.sprintRepo.create({
+        const saved = await this.sprintRepo.save(this.sprintRepo.create({
           jiraSprintId: s.id,
           ...sprintData,
         }));
+        sprintDbId = saved.id;
         created++;
+      }
+
+      // Queue sprint-ticket linking for active/closed sprints
+      if (s.state === 'active' || s.state === 'closed') {
+        await this.queueService.addSyncSprintTicketsJob(instanceId, s.id, sprintDbId);
       }
     }
 
@@ -227,20 +264,54 @@ export class SyncConsumer extends WorkerHost {
     this.logger.log(`[SYNC_VERSIONS] Done: ${created} created, ${updated} updated`);
   }
 
+  private buildSyncJql(
+    projectKey: string,
+    assignees: string[] | null,
+    lastSyncedAt: Date | null,
+  ): string {
+    const conditions: string[] = [`project = ${projectKey}`];
+
+    if (!lastSyncedAt) {
+      // FIRST SYNC: use statusCategory instead of hardcoded status names
+      // Jira has only 3 fixed categories: "To Do", "In Progress", "Done"
+      // This works regardless of custom workflow status names
+      conditions.push(`statusCategory IN ("To Do", "In Progress")`);
+
+      // Filter by assignees on first sync only
+      if (assignees && assignees.length > 0) {
+        const assigneeList = assignees.map(a => `"${a}"`).join(',');
+        conditions.push(`assignee IN (${assigneeList})`);
+      }
+    } else {
+      // SUBSEQUENT SYNC: fetch tickets updated since last sync (all statuses, all assignees)
+      const jiraDate = lastSyncedAt.toISOString().replace('T', ' ').slice(0, 16);
+      conditions.push(`updated >= "${jiraDate}"`);
+    }
+
+    return conditions.join(' AND ') + ' ORDER BY updated DESC';
+  }
+
   private async syncTickets(job: Job): Promise<void> {
-    const { instanceId, projectKey, projectId, syncLogId } = job.data;
+    const { instanceId, projectKey, projectId, syncLogId, lastSyncedAt: lastSyncedAtStr } = job.data;
     const creds = await this.getCredentials(instanceId);
     this.logger.log(`[SYNC_TICKETS] Project: ${projectKey}`);
 
     if (syncLogId) await this.syncLogRepo.markRunning(syncLogId);
 
     let created = 0, updated = 0, failed = 0;
-    const jql = `project = ${projectKey} ORDER BY updated DESC`;
+
+    // Use lastSyncedAt from job data (snapshot at queue time) to avoid race condition
+    // Fall back to querying instance if not provided (backward compatibility)
+    const instance = await this.instanceRepo.findOne({ where: { id: instanceId } });
+    const lastSyncedAt = lastSyncedAtStr !== undefined
+      ? (lastSyncedAtStr ? new Date(lastSyncedAtStr) : null)
+      : (instance?.lastSyncedAt ?? null);
+    const jql = this.buildSyncJql(projectKey, instance?.assignees ?? null, lastSyncedAt);
+    this.logger.log(`[SYNC_TICKETS] JQL: ${jql}`);
 
     try {
-      const issues = await this.jiraService.fetchAllPages<JiraIssue>(
-        (startAt, maxResults) => this.jiraService.searchIssues(creds, jql, startAt, maxResults),
-      );
+      const result = await this.jiraService.searchIssues(creds, jql);
+      const issues = result.issues;
 
       for (const issue of issues) {
         try {
@@ -378,17 +449,53 @@ export class SyncConsumer extends WorkerHost {
       jiraUpdatedAt: fields.updated ? new Date(fields.updated) : null,
     };
 
+    let ticketId: string;
+    let result: 'created' | 'updated';
+
     const existing = await this.ticketRepo.findOne({ where: { jiraTicketId: issue.id } });
     if (existing) {
       await this.ticketRepo.update(existing.id, ticketData);
-      return 'updated';
+      ticketId = existing.id;
+      result = 'updated';
     } else {
-      await this.ticketRepo.save(this.ticketRepo.create({
+      const saved = await this.ticketRepo.save(this.ticketRepo.create({
         jiraTicketId: issue.id,
         jiraTicketKey: issue.key,
         ...ticketData,
       }));
-      return 'created';
+      ticketId = saved.id;
+      result = 'created';
+    }
+
+    // Link ticket to fixVersions
+    await this.linkTicketToVersions(ticketId, fields.fixVersions);
+
+    return result;
+  }
+
+  private async linkTicketToVersions(ticketId: string, fixVersions?: JiraVersion[]): Promise<void> {
+    if (!fixVersions || fixVersions.length === 0) return;
+
+    // Clear existing version links for this ticket
+    await this.ticketRepo.manager
+      .createQueryBuilder()
+      .delete()
+      .from('jira_ticket_version')
+      .where('ticket_id = :ticketId', { ticketId })
+      .execute();
+
+    // Insert new links
+    for (const fv of fixVersions) {
+      const version = await this.versionRepo.findByJiraVersionId(fv.id);
+      if (version) {
+        await this.ticketRepo.manager
+          .createQueryBuilder()
+          .insert()
+          .into('jira_ticket_version')
+          .values({ ticket_id: ticketId, version_id: version.id })
+          .orIgnore()
+          .execute();
+      }
     }
   }
 }

@@ -16,7 +16,11 @@ export class DashboardService {
   ) {}
 
   async getOverview() {
-    const projects = await this.projectRepo.findAllActive();
+    const [projects, totalProjects] = await this.projectRepo.findAndCount({
+      where: { isActive: true },
+      order: { name: 'ASC' },
+      take: 6,
+    });
 
     const ticketStats = await this.projectRepo.manager
       .createQueryBuilder()
@@ -42,6 +46,7 @@ export class DashboardService {
         key: p.jiraProjectKey,
         name: p.name,
       })),
+      totalProjects,
       tickets: {
         total: Number(ticketStats.total),
         done: Number(ticketStats.done),

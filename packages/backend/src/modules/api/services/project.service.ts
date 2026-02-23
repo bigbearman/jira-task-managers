@@ -8,8 +8,8 @@ export class ProjectService {
     private readonly instanceRepo: JiraInstanceRepository,
   ) {}
 
-  async findAll() {
-    return this.projectRepo.findAllActive();
+  async findAll(page = 1, limit = 12, search?: string) {
+    return this.projectRepo.findAllActivePaginated(page, limit, search);
   }
 
   async findByInstance(instanceSlug: string) {

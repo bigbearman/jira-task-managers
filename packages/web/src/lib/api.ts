@@ -27,7 +27,12 @@ export const api = {
   },
 
   projects: {
-    list: () => fetchApi<any>('/projects'),
+    list: (params?: { page?: number; limit?: number; search?: string }) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]),
+      ).toString() : '';
+      return fetchApi<any>(`/projects${qs}`);
+    },
     get: (key: string) => fetchApi<any>(`/projects/${key}`),
     stats: (key: string) => fetchApi<any>(`/projects/${key}/stats`),
   },

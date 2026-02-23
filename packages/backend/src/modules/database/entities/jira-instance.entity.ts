@@ -26,6 +26,12 @@ export class JiraInstance extends BaseEntity {
   @Column({ name: 'sync_enabled', default: true })
   syncEnabled: boolean;
 
+  @Column({ type: 'simple-array', nullable: true })
+  assignees: string[] | null;
+
+  @Column({ name: 'project_keys', type: 'simple-array', nullable: true })
+  projectKeys: string[] | null;
+
   @Column({ type: 'jsonb', nullable: true })
   config: Record<string, any> | null;
 

@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ProjectService } from '../services/project.service';
+import { PaginationDto } from '../dtos/pagination.dto';
 import { CACHE_TTL } from '@/shared/constants/cache';
 
 @ApiTags('Projects')
@@ -13,9 +14,9 @@ export class ProjectController {
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.LIST * 1000)
   @ApiOperation({ summary: 'List all projects across all instances' })
-  async list() {
-    const projects = await this.projectService.findAll();
-    return { success: true, data: projects };
+  async list(@Query() query: PaginationDto, @Query('search') search?: string) {
+    const result = await this.projectService.findAll(query.page, query.limit, search);
+    return { success: true, data: result.data, meta: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } };
   }
 
   @Get(':key')

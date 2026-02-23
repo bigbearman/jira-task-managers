@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JiraInstanceRepository } from '@/database';
 import { JiraService } from '@/jira/jira.service';
-import { IsString, IsOptional, IsBoolean, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsUrl, IsArray } from 'class-validator';
 
 class CreateInstanceDto {
   @IsString()
@@ -34,6 +34,16 @@ class CreateInstanceDto {
   @IsOptional()
   @IsBoolean()
   syncEnabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignees?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  projectKeys?: string[];
 }
 
 class UpdateInstanceDto {
@@ -60,6 +70,16 @@ class UpdateInstanceDto {
   @IsOptional()
   @IsBoolean()
   syncEnabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignees?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  projectKeys?: string[];
 }
 
 @ApiTags('Jira Instances')
@@ -95,6 +115,8 @@ export class InstanceController {
       email: dto.email,
       apiToken: dto.apiToken,
       syncEnabled: dto.syncEnabled ?? true,
+      assignees: dto.assignees ?? null,
+      projectKeys: dto.projectKeys ?? null,
     });
     const saved = await this.instanceRepo.save(instance);
     return { success: true, data: saved };
@@ -113,6 +135,8 @@ export class InstanceController {
     if (dto.apiToken) updateData.apiToken = dto.apiToken;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.syncEnabled !== undefined) updateData.syncEnabled = dto.syncEnabled;
+    if (dto.assignees !== undefined) updateData.assignees = dto.assignees;
+    if (dto.projectKeys !== undefined) updateData.projectKeys = dto.projectKeys;
 
     await this.instanceRepo.update(instance.id, updateData);
     const updated = await this.instanceRepo.findBySlug(slug);

@@ -15,6 +15,9 @@ RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 COPY packages/web/ ./packages/web/
 
 # Build Next.js (standalone output)
+# API_URL is used at build time for Next.js rewrites (server-side proxy)
+# Inside Docker network, "api" resolves to the api container
+ENV API_URL=http://api:3000
 WORKDIR /app/packages/web
 RUN pnpm build
 

@@ -50,10 +50,10 @@ export class QueueService {
     );
   }
 
-  async addSyncTicketsJob(instanceId: string, projectKey: string, projectId: string, syncLogId?: string) {
+  async addSyncTicketsJob(instanceId: string, projectKey: string, projectId: string, syncLogId?: string, lastSyncedAt?: Date | null) {
     return this.syncQueue.add(
       QUEUE_PROCESSOR.JIRA_SYNC.SYNC_TICKETS,
-      { instanceId, projectKey, projectId, syncLogId },
+      { instanceId, projectKey, projectId, syncLogId, lastSyncedAt: lastSyncedAt?.toISOString() ?? null },
       { removeOnComplete: 20, removeOnFail: 50, attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
     );
   }

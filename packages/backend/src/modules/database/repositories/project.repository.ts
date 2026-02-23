@@ -30,4 +30,23 @@ export class ProjectRepository extends Repository<Project> {
       order: { name: 'ASC' },
     });
   }
+
+  async findAllActivePaginated(page: number, limit: number, search?: string) {
+    const qb = this.createQueryBuilder('p')
+      .leftJoinAndSelect('p.instance', 'i')
+      .where('p.is_active = true')
+      .andWhere('p.deleted_at IS NULL');
+
+    if (search) {
+      qb.andWhere('(p.jira_project_key ILIKE :search OR p.name ILIKE :search)', { search: `%${search}%` });
+    }
+
+    const [data, total] = await qb
+      .orderBy('p.name', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
 }

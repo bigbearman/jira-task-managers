@@ -19,6 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import {
   TicketCheck,
   CheckCircle2,
@@ -28,6 +29,7 @@ import {
   Brain,
   Coins,
   Zap,
+  ArrowRight,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -77,7 +79,24 @@ export default function DashboardPage() {
 
       {/* Projects */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Projects</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">
+            Projects
+            {(ov?.totalProjects ?? 0) > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ({ov?.totalProjects})
+              </span>
+            )}
+          </h2>
+          {(ov?.totalProjects ?? 0) > 6 && (
+            <Link href="/projects">
+              <Button variant="ghost" size="sm">
+                View all
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+        </div>
         {(ov?.projects?.length ?? 0) === 0 ? (
           <EmptyState
             icon={FolderKanban}

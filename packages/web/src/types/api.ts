@@ -25,6 +25,8 @@ export interface JiraInstance {
   email: string;
   isActive: boolean;
   syncEnabled: boolean;
+  assignees: string[] | null;
+  projectKeys: string[] | null;
   lastSyncedAt: string | null;
   createdAt: string;
 }
@@ -150,6 +152,7 @@ export interface GitOperation {
 
 export interface DashboardOverview {
   projects: Array<{ id: string; key: string; name: string }>;
+  totalProjects: number;
   tickets: { total: number; done: number; inProgress: number; todo: number };
   activeSprints: Sprint[];
   recentActions: TaskAction[];
@@ -214,6 +217,8 @@ export interface CreateInstanceDto {
   email: string;
   apiToken: string;
   syncEnabled?: boolean;
+  assignees?: string[];
+  projectKeys?: string[];
 }
 
 export interface UpdateInstanceDto {
@@ -223,4 +228,6 @@ export interface UpdateInstanceDto {
   apiToken?: string;
   isActive?: boolean;
   syncEnabled?: boolean;
+  assignees?: string[];
+  projectKeys?: string[];
 }

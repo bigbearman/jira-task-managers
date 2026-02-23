@@ -34,19 +34,19 @@ export class TicketRepository extends Repository<Ticket> {
   async findWithFilters(options: TicketFilterOptions): Promise<[Ticket[], number]> {
     const qb = this.createQueryBuilder('ticket')
       .leftJoinAndSelect('ticket.project', 'project')
-      .where('ticket.deleted_at IS NULL');
+      .where('ticket.deletedAt IS NULL');
 
     if (options.projectKey) {
-      qb.andWhere('project.jira_project_key = :projectKey', { projectKey: options.projectKey });
+      qb.andWhere('project.jiraProjectKey = :projectKey', { projectKey: options.projectKey });
     }
     if (options.status) {
       qb.andWhere('ticket.status = :status', { status: options.status });
     }
     if (options.assignee) {
-      qb.andWhere('ticket.assignee_display_name ILIKE :assignee', { assignee: `%${options.assignee}%` });
+      qb.andWhere('ticket.assigneeDisplayName ILIKE :assignee', { assignee: `%${options.assignee}%` });
     }
     if (options.issueType) {
-      qb.andWhere('ticket.issue_type = :issueType', { issueType: options.issueType });
+      qb.andWhere('ticket.issueType = :issueType', { issueType: options.issueType });
     }
     if (options.sprintId) {
       qb.innerJoin('ticket.sprints', 'sprint', 'sprint.id = :sprintId', { sprintId: options.sprintId });
@@ -57,7 +57,7 @@ export class TicketRepository extends Repository<Ticket> {
 
     const page = options.page || 1;
     const limit = options.limit || 20;
-    qb.orderBy('ticket.jira_updated_at', 'DESC')
+    qb.orderBy('ticket.jiraUpdatedAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -67,8 +67,8 @@ export class TicketRepository extends Repository<Ticket> {
   async findBySprintJiraId(jiraSprintId: number): Promise<Ticket[]> {
     return this.createQueryBuilder('ticket')
       .innerJoin('ticket.sprints', 'sprint')
-      .where('sprint.jira_sprint_id = :jiraSprintId', { jiraSprintId })
-      .andWhere('ticket.deleted_at IS NULL')
+      .where('sprint.jiraSprintId = :jiraSprintId', { jiraSprintId })
+      .andWhere('ticket.deletedAt IS NULL')
       .orderBy('ticket.status', 'ASC')
       .addOrderBy('ticket.priority', 'ASC')
       .getMany();

@@ -135,7 +135,7 @@ export class Ticket extends BaseEntity {
   @OneToMany(() => GitOperation, (gitOp) => gitOp.ticket)
   gitOperations: GitOperation[];
 
-  @ManyToOne(() => Ticket, { nullable: true })
+  @ManyToOne(() => Ticket, { nullable: true, createForeignKeyConstraints: false })
   @JoinColumn({ name: 'parent_key', referencedColumnName: 'jiraTicketKey' })
   parent: Ticket | null;
 

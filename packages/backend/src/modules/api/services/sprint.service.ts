@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SprintRepository, TicketRepository } from '@/database';
+import { paginate, getDefaultPagination } from '@/shared/utils/pagination';
 
 @Injectable()
 export class SprintService {
@@ -47,7 +48,9 @@ export class SprintService {
     const sprint = await this.sprintRepo.findOne({ where: { id } });
     if (!sprint) throw new NotFoundException(`Sprint not found`);
 
-    return this.ticketRepo.findWithFilters({ sprintId: id, page, limit });
+    const pagination = getDefaultPagination(page, limit);
+    const [tickets, total] = await this.ticketRepo.findWithFilters({ sprintId: id, ...pagination });
+    return paginate(tickets, total, pagination);
   }
 
   async getSprintStats(id: string) {

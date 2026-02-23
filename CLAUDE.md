@@ -101,3 +101,100 @@ See `.env.example` for full list. Key vars:
 - `POST /api/v1/sync` — Trigger sync
 - `GET /api/v1/sync/logs` — Sync history
 - Swagger: `http://localhost:3000/docs`
+
+## Coding Standards (MUST follow)
+
+### Entity Rules
+- ALWAYS extend BaseEntity: `@PrimaryGeneratedColumn('uuid')`, `@CreateDateColumn({ type: 'timestamptz' })`, `@UpdateDateColumn`, `@DeleteDateColumn` (soft delete)
+- Column names MUST use snake_case via `name` parameter: `@Column({ name: 'jira_key' })`
+- Enums defined in same entity file, used with `type: 'enum'`
+- JSONB for flexible data: `@Column({ type: 'jsonb', nullable: true })`
+- Always add `@Index()` on foreign keys and frequently queried columns
+
+### Repository Rules
+- MUST extend `Repository<Entity>` with `@InjectDataSource()` constructor pattern
+- Implement domain-specific query methods, not just CRUD
+- Use QueryBuilder for complex queries with parameterized values (`:param`)
+- ILIKE for case-insensitive search, `.skip()/.take()` for pagination
+
+### Controller Rules
+- Decorator order: `@ApiTags()` → `@Controller('api/v1/{resource}')` → class
+- Every endpoint: `@ApiOperation({ summary })` + `@Throttle({ default: { ttl: 60000, limit: N } })`
+- Response format: `{ success: true, data: T }` or `{ success: true, data: T[], meta: { total, page, limit, totalPages } }`
+- Use NestJS exceptions: `NotFoundException`, `BadRequestException`, `UnauthorizedException`
+- Controllers call services, NEVER repositories directly
+
+### DTO Rules
+- Naming: `Create{Name}Dto`, `Update{Name}Dto`, `List{Name}Dto extends PaginationDto`
+- EVERY field: class-validator decorator (`@IsString`, `@IsOptional`, `@IsEnum`, etc.)
+- Swagger: `@ApiPropertyOptional()` on optional fields
+- Number params: `@Type(() => Number)` for class-transformer
+
+### Service Rules
+- `@Injectable()`, constructor injection only
+- Business logic lives here, not in controllers
+- Handle errors with NestJS exceptions
+- Trigger queue jobs for async processing
+
+### Queue Rules
+- Constants in `shared/constants/queue.ts`: `QUEUE_NAME` and `QUEUE_PROCESSOR`
+- Producer: always set `removeOnComplete`, `removeOnFail`, `attempts`, `backoff`
+- Consumer: extend `WorkerHost`, route by `job.name` in `process()` switch
+- Error handling: try/catch, update entity status to FAILED, rethrow
+
+### Frontend Rules
+- `'use client'` for interactive components
+- React Query: `useQuery({ queryKey: ['resource', params], queryFn })` with proper keys
+- API client in `lib/api.ts`, types in `types/api.ts`
+- shadcn/ui components, Lucide icons, Sonner toasts
+- Theme: next-themes with dark mode default
+
+### Import Order
+1. NestJS / external packages
+2. Module imports (@/modules/...)
+3. Shared imports (@/shared/...)
+4. Local files (./relative)
+
+### Naming Conventions
+- Files: `kebab-case` (resource.controller.ts, resource.entity.ts)
+- Classes: `PascalCase` (ResourceController, ResourceService)
+- Methods: `camelCase` (findAll, createResource)
+- Constants: `UPPER_SNAKE` (QUEUE_NAME, API_VERSION)
+- DB columns: `snake_case` via `name` parameter
+- API routes: `kebab-case` (/api/v1/sync-logs)
+- Entity names: singular (Ticket, not Tickets)
+
+### Git Conventions
+- Branches: `feat/{ticket}-{desc}`, `fix/{ticket}-{desc}`, `refactor/{desc}`
+- Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `docs:` prefixes
+- Always lint before commit: `make lint`
+
+## Custom Commands
+
+Use `/command-name` to trigger project-specific workflows:
+
+| Command | Purpose |
+|---------|---------|
+| `/dev` | Start dev environment |
+| `/build` | Build packages |
+| `/test` | Run tests |
+| `/status` | Project status overview |
+| `/logs` | View service logs |
+| `/sync` | Trigger Jira sync |
+| `/db` | Database operations |
+| `/docker-restart` | Rebuild Docker |
+| `/feature` | Scaffold complete feature (entity → API → frontend) |
+| `/add-module` | Scaffold NestJS module |
+| `/add-entity` | Scaffold TypeORM entity |
+| `/add-queue` | Add BullMQ queue with producer/consumer |
+| `/api-design` | Design new API endpoint |
+| `/review` | Code review with project standards |
+| `/debug` | Systematic debugging workflow |
+| `/fix-bug` | Bug fix with root cause analysis |
+| `/refactor` | Smart refactoring |
+| `/optimize` | Performance optimization |
+| `/perf` | Performance audit |
+| `/security` | Security audit |
+| `/pr` | Create Pull Request |
+| `/migrate-db` | Database migration workflow |
+| `/jira-task` | Work on Jira ticket end-to-end |

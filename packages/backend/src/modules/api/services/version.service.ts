@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { VersionRepository, TicketRepository } from '@/database';
+import { paginate, getDefaultPagination } from '@/shared/utils/pagination';
 
 @Injectable()
 export class VersionService {
@@ -47,6 +48,8 @@ export class VersionService {
     const version = await this.versionRepo.findOne({ where: { id } });
     if (!version) throw new NotFoundException(`Version not found`);
 
-    return this.ticketRepo.findWithFilters({ versionId: id, page, limit });
+    const pagination = getDefaultPagination(page, limit);
+    const [tickets, total] = await this.ticketRepo.findWithFilters({ versionId: id, ...pagination });
+    return paginate(tickets, total, pagination);
   }
 }

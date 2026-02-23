@@ -94,67 +94,68 @@ export class JiraService {
     fields?: string[],
   ): Promise<JiraSearchResponse> {
     const client = this.createClient(creds);
+    const fieldList = fields?.length ? fields : this.defaultFields;
+
+    // Use POST /search/jql first (Atlassian deprecated GET /search with 410)
     try {
-      const params: Record<string, any> = { jql, startAt, maxResults };
-      if (fields && fields.length > 0) {
-        params.fields = fields.join(',');
-      }
+      const allIssues: JiraIssue[] = [];
+      let nextPageToken: string | null = null;
 
-      const response = await client.get<JiraSearchResponse>('/rest/api/3/search', {
-        params,
-        validateStatus: (status) => status < 500,
-      });
+      do {
+        const payload: Record<string, any> = { jql, maxResults, fields: fieldList };
+        if (nextPageToken) payload.nextPageToken = nextPageToken;
 
-      if (response.status === 410) {
-        this.logger.warn('GET /rest/api/3/search returned 410, falling back to POST');
-        return this.searchIssuesPost(creds, jql, maxResults, fields);
-      }
+        const response = await client.post('/rest/api/3/search/jql', payload, {
+          validateStatus: (status) => status < 500,
+        });
 
-      if (response.status >= 400) {
-        const msg = (response.data as any)?.errorMessages?.[0] || 'Unknown error';
-        throw new Error(`Jira search failed (${response.status}): ${msg}`);
-      }
+        // Fallback to GET for old Jira Server that doesn't support POST /search/jql
+        if (response.status === 404 || response.status === 405) {
+          this.logger.warn('POST /rest/api/3/search/jql not supported, falling back to GET');
+          return this.searchIssuesGet(creds, jql, startAt, maxResults, fields);
+        }
 
-      return response.data;
+        if (response.status >= 400) {
+          const msg = (response.data as any)?.errorMessages?.[0] || 'Unknown error';
+          throw new Error(`Jira search failed (${response.status}): ${msg}`);
+        }
+
+        const issues = response.data.issues || [];
+        allIssues.push(...issues);
+
+        nextPageToken = response.data.isLast ? null : (response.data.nextPageToken || null);
+        if (nextPageToken) await this.sleep(this.rateLimitMs);
+      } while (nextPageToken);
+
+      return {
+        issues: allIssues,
+        total: allIssues.length,
+        startAt: 0,
+        maxResults: allIssues.length,
+      };
     } catch (error: any) {
-      if (error.response?.status === 410) {
-        return this.searchIssuesPost(creds, jql, maxResults, fields);
+      if (error.response?.status === 404 || error.response?.status === 405) {
+        return this.searchIssuesGet(creds, jql, startAt, maxResults, fields);
       }
       this.logger.error(`searchIssues failed: ${error.message}`);
       throw error;
     }
   }
 
-  private async searchIssuesPost(
+  private async searchIssuesGet(
     creds: JiraCredentials,
     jql: string,
+    startAt = 0,
     maxResults = 100,
     fields?: string[],
   ): Promise<JiraSearchResponse> {
     const client = this.createClient(creds);
-    const allIssues: JiraIssue[] = [];
-    let nextPageToken: string | null = null;
-
-    const fieldList = fields?.length ? fields : this.defaultFields;
-
-    do {
-      const payload: Record<string, any> = { jql, maxResults, fields: fieldList };
-      if (nextPageToken) payload.nextPageToken = nextPageToken;
-
-      const { data } = await client.post('/rest/api/3/search/jql', payload);
-      const issues = data.issues || [];
-      allIssues.push(...issues);
-
-      nextPageToken = data.isLast ? null : (data.nextPageToken || null);
-      await this.sleep(this.rateLimitMs);
-    } while (nextPageToken);
-
-    return {
-      issues: allIssues,
-      total: allIssues.length,
-      startAt: 0,
-      maxResults: allIssues.length,
-    };
+    const params: Record<string, any> = { jql, startAt, maxResults };
+    if (fields && fields.length > 0) {
+      params.fields = fields.join(',');
+    }
+    const { data } = await client.get<JiraSearchResponse>('/rest/api/3/search', { params });
+    return data;
   }
 
   async getIssuesBatch(creds: JiraCredentials, issueKeys: string[]): Promise<JiraIssue[]> {

@@ -61,6 +61,8 @@ interface InstanceForm {
   email: string;
   apiToken: string;
   syncEnabled: boolean;
+  assignees: string;
+  projectKeys: string;
 }
 
 const emptyForm: InstanceForm = {
@@ -70,6 +72,8 @@ const emptyForm: InstanceForm = {
   email: '',
   apiToken: '',
   syncEnabled: true,
+  assignees: '',
+  projectKeys: '',
 };
 
 function slugify(text: string): string {
@@ -100,7 +104,7 @@ export default function SettingsPage() {
   const logs: SyncLog[] = syncLogs?.data ?? [];
 
   const createMut = useMutation({
-    mutationFn: (body: InstanceForm) => api.instances.create(body),
+    mutationFn: (body: Record<string, any>) => api.instances.create(body as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instances'] });
       setShowDialog(false);
@@ -169,6 +173,8 @@ export default function SettingsPage() {
       email: inst.email,
       apiToken: '',
       syncEnabled: inst.syncEnabled,
+      assignees: inst.assignees?.join(', ') ?? '',
+      projectKeys: inst.projectKeys?.join(', ') ?? '',
     });
     setShowDialog(true);
   };
@@ -178,8 +184,17 @@ export default function SettingsPage() {
       toast.error('Please fill in all required fields');
       return;
     }
+    const assignees = form.assignees
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const projectKeys = form.projectKeys
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+
     if (editingSlug) {
-      const body: any = { name: form.name, baseUrl: form.baseUrl, email: form.email, syncEnabled: form.syncEnabled };
+      const body: any = { name: form.name, baseUrl: form.baseUrl, email: form.email, syncEnabled: form.syncEnabled, assignees, projectKeys };
       if (form.apiToken) body.apiToken = form.apiToken;
       updateMut.mutate({ slug: editingSlug, body });
     } else {
@@ -187,7 +202,7 @@ export default function SettingsPage() {
         toast.error('Slug and API Token are required for new instances');
         return;
       }
-      createMut.mutate(form);
+      createMut.mutate({ ...form, assignees, projectKeys });
     }
   };
 
@@ -257,6 +272,25 @@ export default function SettingsPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">{inst.baseUrl}</p>
+                      {inst.projectKeys && inst.projectKeys.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-xs text-muted-foreground">Projects:</span>
+                          {inst.projectKeys.map((k) => (
+                            <Badge key={k} variant="secondary" className="text-xs">
+                              {k}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {inst.assignees && inst.assignees.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {inst.assignees.map((a) => (
+                            <Badge key={a} variant="outline" className="text-xs">
+                              {a}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       {inst.lastSyncedAt && (
                         <p className="text-xs text-muted-foreground">
                           Last synced: {new Date(inst.lastSyncedAt).toLocaleString('vi-VN')}
@@ -422,6 +456,32 @@ export default function SettingsPage() {
                 checked={form.syncEnabled}
                 onCheckedChange={(checked) => setForm((f) => ({ ...f, syncEnabled: checked }))}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assignees">Assignees</Label>
+              <Input
+                id="assignees"
+                placeholder="user1@email.com, user2@email.com"
+                value={form.assignees}
+                onChange={(e) => setForm((f) => ({ ...f, assignees: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Comma-separated Jira emails. First sync only fetches active tickets assigned to these people.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="projectKeys">Project Keys</Label>
+              <Input
+                id="projectKeys"
+                placeholder="PROJ, DEV, OPS"
+                value={form.projectKeys}
+                onChange={(e) => setForm((f) => ({ ...f, projectKeys: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Comma-separated Jira project keys to sync. Leave empty to sync all projects.
+              </p>
             </div>
           </div>
 
