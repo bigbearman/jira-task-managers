@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f93d801158c3",
+  "session_id": "4b6ca427-781c-4073-9fdf-98bd2a597420",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-23T10:45:41.947705Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/backend/src/modules/api/services/dashboard.service.ts",
+    "packages/backend/src/modules/api/services/sprint.service.ts",
+    "packages/web/src/lib/api.ts",
+    "packages/backend/src/modules/api/controllers/instance.controller.ts",
+    "packages/backend/src/modules/database/repositories/project.repository.ts",
+    "packages/backend/src/modules/jira/jira.service.ts",
+    "packages/web/src/app/page.tsx",
+    "packages/web/src/app/projects/page.tsx",
+    "packages/web/src/app/settings/page.tsx",
+    "packages/web/src/types/api.ts",
+    ".gitignore",
+    "CLAUDE.md",
+    "docker/Dockerfile.web",
+    "packages/backend/src/modules/api/services/project.service.ts",
+    "packages/backend/src/modules/queue/queue.service.ts",
+    "packages/backend/src/modules/worker/consumers/sync.consumer.ts",
+    "docker-compose.yml",
+    "packages/backend/src/modules/api/controllers/project.controller.ts",
+    "packages/backend/src/modules/api/services/version.service.ts",
+    "packages/backend/src/modules/database/entities/jira-instance.entity.ts",
+    "packages/backend/src/modules/database/entities/ticket.entity.ts",
+    "packages/backend/src/modules/database/repositories/ticket.repository.ts"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "c16798de2f2b",
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 29751,
+    "cache_read_tokens": 270185,
+    "output_tokens": 986,
+    "api_call_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-23T10:45:41.831952Z",
+    "agent_lines": 530,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 530,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-kienduong-works-kien-ai-space-projects-multi-jira-task-managers/4b6ca427-781c-4073-9fdf-98bd2a597420.jsonl"
+}
